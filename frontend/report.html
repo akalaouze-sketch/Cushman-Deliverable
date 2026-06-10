@@ -817,9 +817,9 @@
       `<div class="nw-head"><span class="nw-title">Market in the news</span>
          <span class="nw-sub">${news.total} DFW CRE stories · last 30 days</span></div>
        <ul>${news.items.map(it => `<li><a href="${it.url}" target="_blank" rel="noopener">${it.headline}</a>
-         <span class="nw-src">— ${it.source}${it.date ? " · " + it.date : ""}</span></li>`).join("")}</ul>
+         <span class="nw-src">— ${it.source}</span></li>`).join("")}</ul>
        <div class="nw-foot">Live DFW commercial-real-estate headlines (GDELT, Google News, NewsAPI &amp; trade RSS),
-         deduped — context alongside the read, <b>not</b> part of the health score. Updated ${news.updated || ""}.</div>`;
+         deduped — context alongside the read, <b>not</b> part of the health score.</div>`;
   }
 
   function renderHouseView(hv) {
@@ -860,7 +860,7 @@
     document.getElementById("eb-sub").textContent = period ? "· " + period : "";
     lane.innerHTML = events.slice(0, 6).map(e => {
       const c = EVENT_COLORS[(e.type || "").toLowerCase()] || "#5d6b73";
-      const label = e.date ? fmtYM(e.date) : (period || "");
+      const label = period || "";   // show the quarter, not a calendar date
       const dateHtml = e.source_url
         ? `<a class="eb-date" href="${e.source_url}" target="_blank" rel="noopener">${label} ↗</a>`
         : `<div class="eb-date">${label}</div>`;
@@ -893,7 +893,7 @@
     document.getElementById("an-sub").textContent = "· civic & development projects shaping the market";
     lane.innerHTML = items.slice(0, 4).map(a => {
       const c = ANNOUNCE_COLORS[(a.type || "").toLowerCase()] || "#5d6b73";
-      const label = a.date ? fmtYM(a.date) : "";
+      const label = "";   // calendar date hidden
       const dateHtml = a.source_url
         ? `<a class="eb-date" href="${a.source_url}" target="_blank" rel="noopener">${label || "source"} ↗</a>`
         : (label ? `<div class="eb-date">${label}</div>` : "");
