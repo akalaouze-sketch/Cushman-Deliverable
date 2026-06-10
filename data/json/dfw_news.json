@@ -1,12 +1,18 @@
 {
- "updated": "2026-06-09 19:31",
- "total": 34,
+ "updated": "2026-06-10 07:33",
+ "total": 33,
  "by_source": {
+  "Google News": 23,
   "The Real Deal": 3,
-  "Google News": 22,
-  "NewsAPI": 9
+  "NewsAPI": 7
  },
  "items": [
+  {
+   "headline": "Fort Worth weighs data center regulations as billion-dollar developments circle area - The Business Journals",
+   "source": "Google News",
+   "date": "2026-06-10",
+   "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNYmpxUDNIWWM3TVQzRUp4dnJQUkZkUDcwUmpUbmVfVlRQcllvbkY5LVpZUUkxTlFpVGlGYlRCeWFaRjk2NHdHNmltOHZvaElYWDFVSTNfTHdQTklZM0V4XzktTnVHUVczMkVDLWtRSDRQU1A0VTkzYV9FYUJDcno3M29SNkpsWDdxQUNtZHlLaWdldFJOTWtUTWdUSWhqbGI1b29DU0hR?oc=5"
+  },
   {
    "headline": "Plano proposes $700M funding plan, total team control to get Dallas Stars to suburbs",
    "source": "The Real Deal",
@@ -50,16 +56,16 @@
    "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQamFOOW5vVllLalBRNnZBQTB4dE9MTVdkRWlPd1l0amJPWG9nWXRpXzh1MEI0eFM3X19YdmE0Qy1UeV9VeUpBZEVOZHFiYzlSeE5JYUU3UFRwdVdFQWMtMEl4YVR6M3BGVW9RZUZUN0pNUmFjUjMzLURuZGM3ZTljOGhSTHl6QnFWcWFIdllFZGU0OU5zLXRncWZOanJvQVZWcWVYU0dTMTRqYXpfRDNGOVRSRUltTzkx?oc=5"
   },
   {
-   "headline": "McKinney Lands $130M Industrial Campus Along U.S. 75 - Dallas Express",
-   "source": "Google News",
-   "date": "2026-06-01",
-   "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPQzR5Z0JYT0E4VjhpOGJSLVpQZ3lCTnVNaVdacmpNTkg1WkF4VHNIMU4yOFlMcUpVQkc1WGtQREo4ekM5VFRwby1wOV85VUdJelhVZkw5OGFMVHNJaGVWYUwwZEw4ZTBSZXVueHgxNDN3SkV0cy1WZHdOaVJZTlY3M3ZaOGJhZmVlNXByc2lGYXY?oc=5"
-  },
-  {
    "headline": "Cabot Properties Acquires 1 MSF Industrial Portfolio in Fort Worth - CommercialSearch",
    "source": "Google News",
    "date": "2026-06-01",
    "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNM1BpSWllallKLUJsbHdBU1g0M09yUmNjMFVWOUpOdHhyXzJlaGs0SXdsYWxQZDVSVWxRWDhKei1BdWdSX0l1M1ZyQ1FscWxiNi0xZWx3WmxHV0szSTdDYUd4ZkotYUdOYjVua050dDNPLUhfNGhMd2JoN29WYktZcTlBbUNCSEE4OHJNRW5oNG5HZ1BueGd0N2c1anFxTVhOQUZzdWpJcGY?oc=5"
+  },
+  {
+   "headline": "McKinney Lands $130M Industrial Campus Along U.S. 75 - Dallas Express",
+   "source": "Google News",
+   "date": "2026-06-01",
+   "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPQzR5Z0JYT0E4VjhpOGJSLVpQZ3lCTnVNaVdacmpNTkg1WkF4VHNIMU4yOFlMcUpVQkc1WGtQREo4ekM5VFRwby1wOV85VUdJelhVZkw5OGFMVHNJaGVWYUwwZEw4ZTBSZXVueHgxNDN3SkV0cy1WZHdOaVJZTlY3M3ZaOGJhZmVlNXByc2lGYXY?oc=5"
   },
   {
    "headline": "Institutional Property Advisors Closes Sale and Arranges Financing for a 458-Unit Multifamily Property in Suburban Dallas - Yield PRO",
@@ -84,12 +90,6 @@
    "source": "Google News",
    "date": "2026-05-26",
    "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxOMmJlaWtVd1hKX3RSWUhkcUVJQURocU5QX3l1cE5DY2ZTMzhSaTVzVGE5VDN4c3JRUDd1ckpEcFNtUEZvSXV4VHNSb25zRGl4dFl0VEhNTnJBbi1MVTJTYmxYZGpsX3dVZzhfMUEzaFc1YlNydDkxNXhaTFNVX2NtejQ0QU1MazR2N1VfQUdGZXFzWkFNYXJTVDh4SjdaOG05UGVmTjNPNWFaOENQY1RHVVRZb3d4YXAwS1JRSXVSSFhNOHZjS01FdnN3?oc=5"
-  },
-  {
-   "headline": "Cove Capital Investments Fully Subscribes Its Debt-Free Ponder Small Bay Industrial 101 Delaware Statutory Trust Offering",
-   "source": "NewsAPI",
-   "date": "2026-05-22",
-   "url": "https://www.prnewswire.com/news-releases/cove-capital-investments-fully-subscribes-its-debt-free-ponder-small-bay-industrial-101-delaware-statutory-trust-offering-302779727.html"
   }
  ]
 }

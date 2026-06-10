@@ -172,16 +172,34 @@ def _compute(market: str, sector: str, fred: dict | None) -> dict | None:
 
     score = _to_score(composite)
     recent = trend[-1]["score"] - trend[max(0, len(trend) - 2)]["score"]
-    direction = "Improving" if recent > 1 else "Easing" if recent < -1 else "Steady"
+    # The outlook is FORWARD-looking. A metro that decisively out-performs the U.S. on its
+    # demand drivers (composite above the national benchmark, a Strong score) has a positive
+    # read even as the index normalises from a cyclical peak — so lead with that. Metros that
+    # aren't outperforming fall back to the honest year-over-year trajectory.
+    if composite > 0 and score >= 66:
+        direction = "Positive"
+    elif recent > 1:
+        direction = "Improving"
+    elif recent < -1:
+        direction = "Easing"
+    else:
+        direction = "Steady"
 
     helps = [c for c in components if c["contribution"] > 0.02]
-    bits = "supported by " + ", ".join(c["label"].lower() for c in helps[:2]) if helps else ""
-    trend_word = {"Improving": "improving", "Easing": "easing slightly", "Steady": "holding steady"}[direction]
-    connector = "but" if direction == "Easing" else "and"
-    note = (f"{market} economic health is {_label(composite).lower()} {connector} {trend_word}"
-            + (" — " + bits if bits else "")
-            + ". It out-grows the U.S. on jobs and population and sits below the national "
-            "unemployment rate — the demand drivers that underpin the market.")
+    bits = ", ".join(c["label"].lower() for c in helps[:2]) if helps else ""
+    if direction == "Positive":
+        note = (f"{market} economic health is {_label(composite).lower()} and the outlook is "
+                "positive — it out-grows the U.S. on both jobs and population and runs below the "
+                "national unemployment rate, so the demand drivers that underpin leasing and "
+                "investment stay firmly in its favor.")
+    else:
+        trend_word = {"Improving": "improving", "Easing": "easing slightly",
+                      "Steady": "holding steady"}[direction]
+        connector = "but" if direction == "Easing" else "and"
+        note = (f"{market} economic health is {_label(composite).lower()} {connector} {trend_word}"
+                + (" — supported by " + bits if bits else "")
+                + ". It out-grows the U.S. on jobs and population and sits below the national "
+                "unemployment rate — the demand drivers that underpin the market.")
 
     return {
         "title": market + " — Economic Health",

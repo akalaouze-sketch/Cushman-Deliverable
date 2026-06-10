@@ -938,8 +938,9 @@
     // trajectory: sparkline of the score over time + direction badge
     let traj = "";
     if (card.trend && card.trend.length > 1) {
-      const dir = card.direction === "Improving" ? "up" : card.direction === "Easing" ? "down" : "flat";
-      const arr = dir === "up" ? "▲" : dir === "down" ? "▼" : "→";
+      const dir = (card.direction === "Improving" || card.direction === "Positive") ? "up"
+        : card.direction === "Easing" ? "down" : "flat";
+      const arr = card.direction === "Positive" ? "↗" : dir === "up" ? "▲" : dir === "down" ? "▼" : "→";
       traj = `<div class="hc-traj">
         <span class="hc-traj-l">Trajectory ${card.trend[0].period.replace("YTD ", "")}–${card.trend[card.trend.length - 1].period.replace("YTD ", "")}</span>
         ${sparkline(card.trend)}

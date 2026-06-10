@@ -228,12 +228,12 @@ def _shield_mask(out_arr):
 
 def _relabel(out_arr, lab, fl, seeds, names, W, H):
     """The baked-in JPEG labels go blurry once we recolor the regions underneath them.
-    So erase each original label (paint its dark-text + white-halo pixels with the
-    region's own colour) and re-draw the name SHARPLY at the same spot with a clean
-    white outline — readable on any teal shade.
+    So erase each original label and re-draw the name SHARPLY with a clean white outline.
 
-    The erase is clipped to the label's OWN region (via `fl`), so a label sitting in a
-    small, tightly-packed downtown region can never paint over its neighbours."""
+    The erase is ANCHORED ON DARK TEXT: it removes the label's dark letter strokes plus
+    only the white halo that hugs them. A submarket name has dark text; an airport airplane
+    or a faint icon is a white-only silhouette with no dark text, so it is left untouched —
+    and highway-sign pills are protected outright."""
     # representative colour of each region, used to paint out the old label
     rc = {}
     for i in range(len(names)):
@@ -241,14 +241,11 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
         if m.any():
             rc[i] = out_arr[m].mean(axis=0)
 
-    # Protect the highway signs from the erase (small compact pills only — see _shield_mask).
+    # Never erase a compact highway-sign pill (SRT / DNT / PGBT / interstate shields).
     shield = _shield_mask(out_arr)
-    # ...but NOT inside a label's own footprint: a short word's halo (e.g. "I-35") can look
-    # sign-sized, and real road signs sit away from label centres — so always erase there.
-    for sx, sy in seeds:
-        shield[max(0, int(sy) - 58):int(sy) + 58, max(0, int(sx) - 104):int(sx) + 104] = False
 
-    BW, BH = 182, 104   # search window around each label centre (region-clipped + shield-safe)
+    BW, BH = 196, 122        # search window around each label centre
+    centers = {}             # corrected label centre (dark-text centroid) for the redraw
     for i, (sx, sy) in enumerate(seeds):
         if i not in rc:
             continue
@@ -258,17 +255,22 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
         lum = sub.mean(axis=2)
         rr, bb = sub[..., 0], sub[..., 2]
         reg_lum = float(rc[i].mean())
-        # erase anything darker than THIS region (text + its grey anti-aliased edges) or
-        # lighter & low-saturation (the white halo) — but ONLY within this label's region,
-        # and NEVER over a highway sign.
         mine = (fl[y0:y1, x0:x1] == i) & ~shield[y0:y1, x0:x1]
-        old = mine & ((reg_lum - lum > 14) | ((lum - reg_lum > 11) & (np.abs(bb - rr) < 26)))
-        # grow the mask a few px to swallow the faint sub-threshold halo fringe, but keep it
-        # inside this region and off the signs so it never spills.
+        # the label's dark letter strokes (this is what distinguishes a name from a
+        # white-only airplane/icon, which has no dark text)
+        dark = mine & (reg_lum - lum > 13)
+        near_text = np.asarray(Image.fromarray((dark * 255).astype(np.uint8))
+                               .filter(ImageFilter.MaxFilter(13))) > 127   # reach the halo
+        halo = mine & near_text & (lum - reg_lum > 10) & (np.abs(bb - rr) < 27)
+        old = dark | halo
+        # small fringe to swallow the faint sub-threshold halo edge, kept in-region/off-signs
         old = (np.asarray(Image.fromarray((old * 255).astype(np.uint8))
                           .filter(ImageFilter.MaxFilter(7))) > 127) & mine
         sub[old] = rc[i]
         out_arr[y0:y1, x0:x1] = sub
+        ys_, xs_ = np.where(dark)
+        if len(xs_):
+            centers[i] = (x0 + float(xs_.mean()), y0 + float(ys_.mean()))
 
     canvas = Image.fromarray(out_arr.clip(0, 255).astype(np.uint8))
     d = ImageDraw.Draw(canvas)
@@ -276,12 +278,13 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
     for i, (sx, sy) in enumerate(seeds):
         if i not in rc:
             continue
+        cx, cy = centers.get(i, (sx, sy))   # draw over where the old label actually was
         lines = _wrap(names[i].upper())
         lh = 31
-        ty = sy - (len(lines) * lh) / 2.0
+        ty = cy - (len(lines) * lh) / 2.0
         for ln in lines:
             w_ = d.textlength(ln, font=font)
-            d.text((sx - w_ / 2.0, ty), ln, font=font, fill=(26, 38, 54),
+            d.text((cx - w_ / 2.0, ty), ln, font=font, fill=(26, 38, 54),
                    stroke_width=4, stroke_fill=(255, 255, 255))
             ty += lh
     return canvas
@@ -381,6 +384,19 @@ def build(sector: str) -> None:
     fl = _fill_regions(lab)
     img = _relabel(out_arr, lab, fl, seeds, names, W, H)
     idmap = lab
+
+    # Crop to the coloured metro so there's no wasted grey basemap around it — the map fills
+    # the frame, with a little padding so the edge submarkets (North/South Fort Worth, Ellis
+    # County) aren't flush against the border. Use rows/cols with SUBSTANTIAL colour so a few
+    # stray grown pixels at the edges don't defeat the crop.
+    colmask = lab >= 0
+    rows = np.where(colmask.sum(axis=1) > 18)[0]
+    colsx = np.where(colmask.sum(axis=0) > 18)[0]
+    pad = 24
+    cy0, cy1 = max(0, int(rows.min()) - pad), min(H, int(rows.max()) + 1 + pad)
+    cx0, cx1 = max(0, int(colsx.min()) - pad), min(W, int(colsx.max()) + 1 + pad)
+    img = img.crop((cx0, cy0, cx1, cy1))
+    idmap = idmap[cy0:cy1, cx0:cx1]
     ok = len(names)
 
     ASSETS.mkdir(parents=True, exist_ok=True)
