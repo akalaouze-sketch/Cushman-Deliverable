@@ -831,7 +831,7 @@
     const badge = document.getElementById("hv-stance");
     badge.textContent = "Takeaway"; badge.className = "hv-stance neutral";
     document.getElementById("hv-conv").textContent = "";
-    document.getElementById("hv-asof").textContent = hv.as_of || "";
+    document.getElementById("hv-asof").textContent = "";   // date intentionally hidden
     document.getElementById("hv-headline").textContent = hv.headline || "";
     document.getElementById("hv-thesis").textContent = hv.thesis || "";
     document.getElementById("hv-change").textContent = hv.what_would_change || "—";
