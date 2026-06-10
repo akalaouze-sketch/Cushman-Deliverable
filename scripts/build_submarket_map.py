@@ -287,7 +287,13 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
             d.text((cx - w_ / 2.0, ty), ln, font=font, fill=(26, 38, 54),
                    stroke_width=4, stroke_fill=(255, 255, 255))
             ty += lh
-    return canvas
+
+    # Put the highway signs back on TOP of everything — a redrawn label must never cover an
+    # interstate shield. out_arr still holds the pristine, un-tinted signs, so paste them over
+    # the finished canvas (labels included).
+    cv = np.asarray(canvas).copy()
+    cv[shield] = out_arr[shield].clip(0, 255).astype(np.uint8)
+    return Image.fromarray(cv)
 
 
 def build(sector: str) -> None:
