@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT))
 
 import fitz  # noqa: E402
 import numpy as np  # noqa: E402
-from PIL import Image, ImageDraw  # noqa: E402
+from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 
 DATA = ROOT / "data/json"
 ASSETS = ROOT / "frontend/assets"
@@ -187,6 +187,45 @@ def _fill_regions(lab, iters=46):
     return fl
 
 
+def _shield_mask(out_arr):
+    """Mask of the little highway SIGNS (SRT / DNT / PGBT / interstate shields) so the label
+    erase never touches them. A sign is a SMALL, COMPACT, SOLID white pill; a submarket
+    label's white halo is WIDE and irregular — so erode the white (thin halos vanish), find
+    connected blobs, and keep only the small compact ones."""
+    from PIL import ImageFilter
+    lum = out_arr.mean(axis=2)
+    rr, bb = out_arr[..., 0], out_arr[..., 2]
+    white = (lum > 188) & (np.abs(bb - rr) < 30)
+    core = np.asarray(Image.fromarray((white * 255).astype(np.uint8))
+                      .filter(ImageFilter.MinFilter(9))) > 127
+    H, W = core.shape
+    keep = np.zeros((H, W), bool)
+    seen = np.zeros((H, W), bool)
+    for y0, x0 in zip(*np.where(core)):
+        if seen[y0, x0]:
+            continue
+        comp, dq = [], deque([(y0, x0)])
+        seen[y0, x0] = True
+        minx = maxx = x0
+        miny = maxy = y0
+        while dq:
+            y, x = dq.popleft()
+            comp.append((y, x))
+            minx, maxx = min(minx, x), max(maxx, x)
+            miny, maxy = min(miny, y), max(maxy, y)
+            for ny, nx in ((y+1, x), (y-1, x), (y, x+1), (y, x-1),
+                           (y+1, x+1), (y-1, x-1), (y+1, x-1), (y-1, x+1)):
+                if 0 <= ny < H and 0 <= nx < W and core[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    dq.append((ny, nx))
+        w, h = maxx - minx + 1, maxy - miny + 1
+        if w <= 58 and h <= 48 and len(comp) / (w * h) > 0.42:   # a compact sign pill
+            for y, x in comp:
+                keep[y, x] = True
+    return np.asarray(Image.fromarray((keep * 255).astype(np.uint8))
+                      .filter(ImageFilter.MaxFilter(17))) > 127   # dilate back + margin
+
+
 def _relabel(out_arr, lab, fl, seeds, names, W, H):
     """The baked-in JPEG labels go blurry once we recolor the regions underneath them.
     So erase each original label (paint its dark-text + white-halo pixels with the
@@ -201,7 +240,15 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
         m = lab == i
         if m.any():
             rc[i] = out_arr[m].mean(axis=0)
-    BW, BH = 176, 82   # search window around each label centre (the region clip keeps it safe)
+
+    # Protect the highway signs from the erase (small compact pills only — see _shield_mask).
+    shield = _shield_mask(out_arr)
+    # ...but NOT inside a label's own footprint: a short word's halo (e.g. "I-35") can look
+    # sign-sized, and real road signs sit away from label centres — so always erase there.
+    for sx, sy in seeds:
+        shield[max(0, int(sy) - 58):int(sy) + 58, max(0, int(sx) - 104):int(sx) + 104] = False
+
+    BW, BH = 182, 104   # search window around each label centre (region-clipped + shield-safe)
     for i, (sx, sy) in enumerate(seeds):
         if i not in rc:
             continue
@@ -212,9 +259,14 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
         rr, bb = sub[..., 0], sub[..., 2]
         reg_lum = float(rc[i].mean())
         # erase anything darker than THIS region (text + its grey anti-aliased edges) or
-        # lighter & low-saturation (the white halo) — but ONLY within this label's region.
-        mine = fl[y0:y1, x0:x1] == i
+        # lighter & low-saturation (the white halo) — but ONLY within this label's region,
+        # and NEVER over a highway sign.
+        mine = (fl[y0:y1, x0:x1] == i) & ~shield[y0:y1, x0:x1]
         old = mine & ((reg_lum - lum > 14) | ((lum - reg_lum > 11) & (np.abs(bb - rr) < 26)))
+        # grow the mask a few px to swallow the faint sub-threshold halo fringe, but keep it
+        # inside this region and off the signs so it never spills.
+        old = (np.asarray(Image.fromarray((old * 255).astype(np.uint8))
+                          .filter(ImageFilter.MaxFilter(7))) > 127) & mine
         sub[old] = rc[i]
         out_arr[y0:y1, x0:x1] = sub
 
@@ -285,6 +337,26 @@ def build(sector: str) -> None:
             if 0 <= nx < tW and 0 <= ny < tH and lab[ny, nx] < 0 and teal[ny, nx]:
                 lab[ny, nx] = l
                 dq.append((nx, ny))
+
+    # Grow each region a few px into the faint anti-aliased teal sliver at its edge, so the
+    # fill reaches the PDF's road outline instead of stopping a hair short. Restricted to
+    # genuinely teal-tinted pixels (b>r, g>r) so it NEVER bleeds onto a white road or grey
+    # water — it only closes the thin uncoloured ring between a region and its boundary.
+    near_teal = (b - r > 5) & (g - r > 2)
+    for _ in range(3):
+        moved = False
+        for ax, sh in ((0, 1), (0, -1), (1, 1), (1, -1)):
+            nb = np.roll(lab, sh, axis=ax)
+            if ax == 0:
+                (nb[-1] if sh == 1 else nb[0]).fill(-1)
+            else:
+                (nb[:, -1] if sh == 1 else nb[:, 0]).fill(-1)
+            m = (lab < 0) & (nb >= 0) & near_teal
+            if m.any():
+                lab[m] = nb[m]
+                moved = True
+        if not moved:
+            break
 
     ys, xs = np.where(lab >= 0)
     out_arr = base.copy()
