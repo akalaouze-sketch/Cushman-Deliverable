@@ -194,19 +194,16 @@ def build(sector: str) -> None:
     lg = light_grey[ys, xs][:, None]
     out_arr[ys, xs] = lg * (1 - BLEND) + cols[lab[ys, xs]] * BLEND   # tint each pixel by its region
 
-    # DISTINCT area outlines: a dark line wherever the submarket id changes (region-vs-region
-    # or region-vs-road), so each area is clearly delineated.
-    base_lum = base.mean(axis=2)
+    # Soft area outlines: a subtle line wherever the submarket id changes, so each area is
+    # delineated without being harsh. (The baked-in labels keep their original dark-text +
+    # white-halo rendering — we deliberately do NOT paint over them, which is what made the
+    # text read as "black over white lettering".)
     diff = np.zeros((H, W), bool)
     diff[:, :-1] |= lab[:, :-1] != lab[:, 1:]
     diff[:, 1:] |= lab[:, :-1] != lab[:, 1:]
     diff[:-1, :] |= lab[:-1, :] != lab[1:, :]
     diff[1:, :] |= lab[:-1, :] != lab[1:, :]
-    out_arr[diff & (lab >= 0)] = (58, 70, 92)
-
-    # CRISP BLACK labels: the original dark text/linework -> near-black (the light tint was
-    # washing the baked-in labels out).
-    out_arr[base_lum < 122] = (26, 28, 34)
+    out_arr[diff & (lab >= 0)] = (96, 114, 134)
 
     img = Image.fromarray(out_arr.clip(0, 255).astype(np.uint8))
     idmap = lab
