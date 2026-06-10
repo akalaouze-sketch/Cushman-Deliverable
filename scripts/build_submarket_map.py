@@ -341,25 +341,11 @@ def build(sector: str) -> None:
                 lab[ny, nx] = l
                 dq.append((nx, ny))
 
-    # Grow each region a few px into the faint anti-aliased teal sliver at its edge, so the
-    # fill reaches the PDF's road outline instead of stopping a hair short. Restricted to
-    # genuinely teal-tinted pixels (b>r, g>r) so it NEVER bleeds onto a white road or grey
-    # water — it only closes the thin uncoloured ring between a region and its boundary.
-    near_teal = (b - r > 5) & (g - r > 2)
-    for _ in range(3):
-        moved = False
-        for ax, sh in ((0, 1), (0, -1), (1, 1), (1, -1)):
-            nb = np.roll(lab, sh, axis=ax)
-            if ax == 0:
-                (nb[-1] if sh == 1 else nb[0]).fill(-1)
-            else:
-                (nb[:, -1] if sh == 1 else nb[:, 0]).fill(-1)
-            m = (lab < 0) & (nb >= 0) & near_teal
-            if m.any():
-                lab[m] = nb[m]
-                moved = True
-        if not moved:
-            break
+    # NOTE: we deliberately do NOT grow the fill past the geodesic boundary. The geodesic
+    # BFS already stops exactly at the white roads, so the fill is clean. An earlier "grow to
+    # the outline" pass bled region colour over the road edges and the interstate shields,
+    # which read as messy — so the regions stop crisply at the roads and the signs/roads sit
+    # clean on top.
 
     ys, xs = np.where(lab >= 0)
     out_arr = base.copy()
