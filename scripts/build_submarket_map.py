@@ -138,6 +138,79 @@ def _teal_seed(arr, cx, cy):
     return None
 
 
+def _font(size):
+    import os
+    for p in ("/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+              "/Library/Fonts/Arial Bold.ttf",
+              "/System/Library/Fonts/Helvetica.ttc",
+              "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
+        if os.path.exists(p):
+            from PIL import ImageFont
+            return ImageFont.truetype(p, size)
+    from PIL import ImageFont
+    return ImageFont.load_default()
+
+
+def _wrap(name, width=12):
+    """Break a submarket name into tidy short lines (split on '/' and spaces)."""
+    words, out = name.replace("/", "/ ").split(), []
+    cur = ""
+    for w in words:
+        t = (cur + " " + w).strip()
+        if len(t) > width and cur:
+            out.append(cur); cur = w
+        else:
+            cur = t
+    if cur:
+        out.append(cur)
+    return [l.replace("/ ", "/").strip() for l in out]
+
+
+def _relabel(out_arr, lab, seeds, names, W, H):
+    """The baked-in JPEG labels go blurry once we recolor the regions underneath them.
+    So erase each original label (paint its dark-text + white-halo pixels with the
+    region's own colour) and re-draw the name SHARPLY at the same spot with a clean
+    white outline — readable on any teal shade."""
+    # representative colour of each region, used to paint out the old label
+    rc = {}
+    for i in range(len(names)):
+        m = lab == i
+        if m.any():
+            rc[i] = out_arr[m].mean(axis=0)
+    BW, BH = 176, 82   # erase window around each label centre (generous — labels sit interior)
+    for i, (sx, sy) in enumerate(seeds):
+        if i not in rc:
+            continue
+        x0, y0 = max(0, int(sx) - BW), max(0, int(sy) - BH)
+        x1, y1 = min(W, int(sx) + BW), min(H, int(sy) + BH)
+        sub = out_arr[y0:y1, x0:x1]
+        lum = sub.mean(axis=2)
+        rr, bb = sub[..., 0], sub[..., 2]
+        reg_lum = float(rc[i].mean())
+        # erase anything darker than THIS region (text + its grey anti-aliased edges) or
+        # lighter & low-saturation (the white halo, down to its faint outer fringe) — adapts
+        # to each region's shade so it works on both pale and deep teal.
+        old = (reg_lum - lum > 14) | ((lum - reg_lum > 11) & (np.abs(bb - rr) < 26))
+        sub[old] = rc[i]
+        out_arr[y0:y1, x0:x1] = sub
+
+    canvas = Image.fromarray(out_arr.clip(0, 255).astype(np.uint8))
+    d = ImageDraw.Draw(canvas)
+    font = _font(27)
+    for i, (sx, sy) in enumerate(seeds):
+        if i not in rc:
+            continue
+        lines = _wrap(names[i].upper())
+        lh = 31
+        ty = sy - (len(lines) * lh) / 2.0
+        for ln in lines:
+            w_ = d.textlength(ln, font=font)
+            d.text((sx - w_ / 2.0, ty), ln, font=font, fill=(26, 38, 54),
+                   stroke_width=4, stroke_fill=(255, 255, 255))
+            ty += lh
+    return canvas
+
+
 def build(sector: str) -> None:
     cfg = SEEDS[sector]
     if not cfg["regions"]:
@@ -205,7 +278,10 @@ def build(sector: str) -> None:
     diff[1:, :] |= lab[:-1, :] != lab[1:, :]
     out_arr[diff & (lab >= 0)] = (96, 114, 134)
 
-    img = Image.fromarray(out_arr.clip(0, 255).astype(np.uint8))
+    # --- Crisp labels: the baked-in JPEG labels blur against the recolored regions, so
+    #     ERASE each one (fill its dark-text + white-halo pixels with the region colour)
+    #     and re-DRAW it sharply at the same spot with a clean white outline. ---
+    img = _relabel(out_arr, lab, seeds, names, W, H)
     idmap = lab
     ok = len(names)
 
