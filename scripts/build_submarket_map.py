@@ -166,18 +166,42 @@ def _wrap(name, width=12):
     return [l.replace("/ ", "/").strip() for l in out]
 
 
-def _relabel(out_arr, lab, seeds, names, W, H):
+def _fill_regions(lab, iters=46):
+    """Grow the geodesic region ids into the -1 gaps (roads, labels) so every pixel
+    knows its nearest region. Vectorised flood by iterative 4-neighbour dilation."""
+    fl = lab.copy()
+    for _ in range(iters):
+        changed = False
+        for ax, sh in ((0, 1), (0, -1), (1, 1), (1, -1)):
+            nb = np.roll(fl, sh, axis=ax)
+            if ax == 0:
+                (nb[-1] if sh == 1 else nb[0]).fill(-1)
+            else:
+                (nb[:, -1] if sh == 1 else nb[:, 0]).fill(-1)
+            m = (fl < 0) & (nb >= 0)
+            if m.any():
+                fl[m] = nb[m]
+                changed = True
+        if not changed:
+            break
+    return fl
+
+
+def _relabel(out_arr, lab, fl, seeds, names, W, H):
     """The baked-in JPEG labels go blurry once we recolor the regions underneath them.
     So erase each original label (paint its dark-text + white-halo pixels with the
     region's own colour) and re-draw the name SHARPLY at the same spot with a clean
-    white outline — readable on any teal shade."""
+    white outline — readable on any teal shade.
+
+    The erase is clipped to the label's OWN region (via `fl`), so a label sitting in a
+    small, tightly-packed downtown region can never paint over its neighbours."""
     # representative colour of each region, used to paint out the old label
     rc = {}
     for i in range(len(names)):
         m = lab == i
         if m.any():
             rc[i] = out_arr[m].mean(axis=0)
-    BW, BH = 176, 82   # erase window around each label centre (generous — labels sit interior)
+    BW, BH = 176, 82   # search window around each label centre (the region clip keeps it safe)
     for i, (sx, sy) in enumerate(seeds):
         if i not in rc:
             continue
@@ -188,9 +212,9 @@ def _relabel(out_arr, lab, seeds, names, W, H):
         rr, bb = sub[..., 0], sub[..., 2]
         reg_lum = float(rc[i].mean())
         # erase anything darker than THIS region (text + its grey anti-aliased edges) or
-        # lighter & low-saturation (the white halo, down to its faint outer fringe) — adapts
-        # to each region's shade so it works on both pale and deep teal.
-        old = (reg_lum - lum > 14) | ((lum - reg_lum > 11) & (np.abs(bb - rr) < 26))
+        # lighter & low-saturation (the white halo) — but ONLY within this label's region.
+        mine = fl[y0:y1, x0:x1] == i
+        old = mine & ((reg_lum - lum > 14) | ((lum - reg_lum > 11) & (np.abs(bb - rr) < 26)))
         sub[old] = rc[i]
         out_arr[y0:y1, x0:x1] = sub
 
@@ -280,8 +304,10 @@ def build(sector: str) -> None:
 
     # --- Crisp labels: the baked-in JPEG labels blur against the recolored regions, so
     #     ERASE each one (fill its dark-text + white-halo pixels with the region colour)
-    #     and re-DRAW it sharply at the same spot with a clean white outline. ---
-    img = _relabel(out_arr, lab, seeds, names, W, H)
+    #     and re-DRAW it sharply at the same spot with a clean white outline. The erase is
+    #     clipped to each label's own region (fl) so it never bleeds into a neighbour. ---
+    fl = _fill_regions(lab)
+    img = _relabel(out_arr, lab, fl, seeds, names, W, H)
     idmap = lab
     ok = len(names)
 
