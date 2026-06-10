@@ -1,0 +1,35 @@
+# Secrets
+.env
+.env.local
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/build/
+
+# Data (parsed reports, FRED snapshot, house views, source PDFs) IS tracked — the
+# deployed app reads it at runtime, so it must ship in the repo. Only the local
+# voice-training samples and the user feedback log stay out.
+data/voice/
+data/json/feedback.jsonl
+
+# Generated deliverables (decks + temp render files)
+deliverables/*.pdf
+deliverables/*.pptx
+deliverables/_*
+
+# OS / editor
+.DS_Store
+
+# agent execution traces (local)
+data/traces/
+
+# news aggregator: raw CSVs + scheduler state stay local; the dashboard JSON ships so the
+# "Market in the news" panel has data on the deployed site.
+data/news/

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Trace Inspector</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1d2130; --line:#2a2f3e;
+    --ink:#e6e9f0; --mut:#8b93a7; --accent:#5b8cff;
+    --llm:#a855f7; --agent:#22c55e; --tool:#f59e0b; --io:#38bdf8; --reasoning:#eab308; --err:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);color:var(--ink);height:100vh;display:flex}
+  #side{width:330px;flex:none;border-right:1px solid var(--line);overflow:auto;background:var(--panel)}
+  #side h1{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);padding:14px 16px;margin:0;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+  .run{padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+  .run:hover{background:var(--panel2)}
+  .run.active{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+  .run .name{font-weight:600}
+  .run .meta{color:var(--mut);font-size:11px;margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+  .pill{padding:1px 7px;border-radius:10px;font-size:10px;background:#222838;color:var(--mut)}
+  .pill.ok{color:#22c55e} .pill.error{color:var(--err);background:#2a1414}
+  #main{flex:1;overflow:auto;padding:20px 26px}
+  #main h2{font-size:15px;margin:0 0 4px}
+  #runmeta{color:var(--mut);margin-bottom:16px;font-size:12px}
+  #runmeta code{color:var(--ink)}
+  .node{margin-left:18px;border-left:1px solid var(--line);padding-left:14px}
+  .row{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer}
+  .row:hover{color:#fff}
+  .tw{width:12px;color:var(--mut);flex:none;text-align:center}
+  .badge{font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:4px;flex:none;color:#0b0d12;font-weight:700}
+  .b-llm{background:var(--llm)} .b-agent{background:var(--agent)} .b-tool{background:var(--tool)}
+  .b-io{background:var(--io)} .b-reasoning{background:var(--reasoning)} .b-function{background:#64748b}
+  .b-event{background:#475569} .nm{font-weight:600}
+  .dur{color:var(--mut);font-size:11px}
+  .bar{height:5px;border-radius:3px;background:var(--accent);opacity:.55;flex:none}
+  .err{color:var(--err)}
+  .detail{display:none;margin:2px 0 8px 30px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .detail.open{display:block}
+  .kv{display:grid;grid-template-columns:90px 1fr;gap:2px 12px;margin-bottom:8px}
+  .kv .k{color:var(--mut)}
+  .io-box{white-space:pre-wrap;word-break:break-word;background:#0b0d12;border:1px solid var(--line);border-radius:6px;padding:8px;max-height:280px;overflow:auto;color:#cdd3e0}
+  .io-label{color:var(--mut);font-size:11px;margin:6px 0 2px}
+  .empty{color:var(--mut);padding:40px;text-align:center}
+  a.refresh{color:var(--accent);text-decoration:none;float:right;font-size:11px}
+</style>
+</head>
+<body>
+  <div id="side">
+    <h1>Agent Traces <a class="refresh" href="#" onclick="loadIndex();return false">↻ refresh</a></h1>
+    <div id="list"><div class="empty">loading…</div></div>
+  </div>
+  <div id="main"><div class="empty">Select a run on the left to inspect its execution graph.</div></div>
+
+<script>
+const KIND = {llm:"LLM",agent:"AGENT",tool:"TOOL",io:"IO",reasoning:"THINK",function:"FN",event:"EVT"};
+let MAXDUR = 1;
+
+async function loadIndex(){
+  const rows = await (await fetch("/api/traces?limit=80")).json();
+  const list = document.getElementById("list");
+  if(!rows.length){ list.innerHTML='<div class="empty">No traces yet.<br>Parse a PDF or hit /api/report.</div>'; return; }
+  list.innerHTML = rows.map(r=>`
+    <div class="run" data-id="${r.id}" onclick="loadRun('${r.id}')">
+      <div class="name">${r.name} <span class="pill ${r.status}">${r.status}</span></div>
+      <div class="meta"><span>${r.id.slice(0,15)}</span><span>${r.duration_ms} ms</span><span>${r.span_count} spans</span></div>
+    </div>`).join("");
+}
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function pretty(v){ try{ return typeof v==="string"?v:JSON.stringify(v,null,2);}catch(e){ return String(v);} }
+
+function nodeHTML(n){
+  const k = n.kind in KIND ? n.kind : "function";
+  const w = Math.max(2, Math.round(120*(n.duration_ms/MAXDUR)));
+  const m = n.meta||{};
+  const tok = k==="llm" ? `  ${esc(m.model||"")} · ${m.input_tokens??"?"}→${m.output_tokens??"?"} tok` : "";
+  const kids = (n.children||[]).map(nodeHTML).join("");
+  const tw = (n.children&&n.children.length)?"▸":"";
+  const errClass = n.status==="error"?" err":"";
+  return `<div class="node">
+    <div class="row${errClass}" onclick="tog(this,event)">
+      <span class="tw">${tw}</span>
+      <span class="badge b-${k}">${KIND[k]}</span>
+      <span class="nm">${esc(n.name)}</span>
+      <span class="bar" style="width:${w}px"></span>
+      <span class="dur">${n.duration_ms} ms${tok}</span>
+    </div>
+    <div class="detail">
+      <div class="kv">
+        <span class="k">status</span><span>${esc(n.status)}</span>
+        ${m.model?`<span class="k">model</span><span>${esc(m.model)}</span>`:""}
+        ${n.error?`<span class="k">error</span><span class="err">${esc(n.error)}</span>`:""}
+      </div>
+      ${n.input!=null?`<div class="io-label">input</div><div class="io-box">${esc(pretty(n.input))}</div>`:""}
+      ${n.output!=null?`<div class="io-label">output</div><div class="io-box">${esc(pretty(n.output))}</div>`:""}
+    </div>
+    ${kids}
+  </div>`;
+}
+
+function tog(row,ev){
+  ev.stopPropagation();
+  const d = row.nextElementSibling;
+  if(d&&d.classList.contains("detail")) d.classList.toggle("open");
+}
+
+function maxDur(nodes){ for(const n of nodes){ MAXDUR=Math.max(MAXDUR,n.duration_ms||1); maxDur(n.children||[]); } }
+
+async function loadRun(id){
+  document.querySelectorAll(".run").forEach(e=>e.classList.toggle("active", e.dataset.id===id));
+  const d = await (await fetch("/api/trace/"+id)).json();
+  if(d.error){ document.getElementById("main").innerHTML=`<div class="empty">${d.error}</div>`; return; }
+  MAXDUR=1; maxDur(d.tree||[]);
+  const main = document.getElementById("main");
+  main.innerHTML = `
+    <h2>${esc(d.name)} <span class="pill ${d.status}">${d.status}</span></h2>
+    <div id="runmeta">
+      <code>${esc(d.id)}</code> · ${d.duration_ms} ms · ${d.span_count} spans<br>
+      ${d.input!=null?`input: <code>${esc(pretty(d.input)).slice(0,300)}</code><br>`:""}
+      ${d.output!=null?`output: <code>${esc(pretty(d.output)).slice(0,300)}</code>`:""}
+    </div>
+    ${(d.tree||[]).map(nodeHTML).join("")}`;
+}
+
+loadIndex();
+</script>
+</body>
+</html>

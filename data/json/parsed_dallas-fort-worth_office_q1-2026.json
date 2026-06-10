@@ -1,0 +1,149 @@
+{
+  "market": "Dallas/Fort Worth",
+  "sector": "Office",
+  "period": "Q1 2026",
+  "metrics": [
+    {
+      "key": "ytd_net_absorption",
+      "label": "YTD Net Absorption (s.f.)",
+      "value": "117K",
+      "forecast": null,
+      "source_quote": "117K\nYTD Net Absorption, SF"
+    },
+    {
+      "key": "total_vacancy",
+      "label": "Vacancy Rate (%)",
+      "value": "24.5%",
+      "forecast": "down",
+      "source_quote": "24.5%\nVacancy Rate"
+    },
+    {
+      "key": "overall_direct_asking_rent",
+      "label": "Overall Asking Rent (All Classes) ($ p.s.f.)",
+      "value": "$34.04",
+      "forecast": "up",
+      "source_quote": "$34.04\nAsking Rent, PSF\n(Overall, All Property Classes)"
+    },
+    {
+      "key": "class_a_direct_asking_rent",
+      "label": "Class A Asking Rent ($ p.s.f.)",
+      "value": "$39.90 psf",
+      "forecast": "up",
+      "source_quote": "Class A increased 3.6% YOY to $39.90 psf, with growth occurring across all competitive tiers."
+    },
+    {
+      "key": "under_construction",
+      "label": "Under Construction (s.f.)",
+      "value": "2,036,871",
+      "forecast": null,
+      "source_quote": "DALLAS/FORT WORTH TOTALS | 231,988,098 | 56,949,228 | 24.5% | 116,870 | 116,870 | 3,291,750 | 2,036,871 | 0 | $34.04 | $39.90"
+    },
+    {
+      "key": "ytd_leasing_activity",
+      "label": "YTD Leasing Activity (s.f.)",
+      "value": "3,291,750",
+      "forecast": null,
+      "source_quote": "DALLAS/FORT WORTH TOTALS | 231,988,098 | 56,949,228 | 24.5% | 116,870 | 116,870 | 3,291,750 | 2,036,871 | 0 | $34.04 | $39.90"
+    }
+  ],
+  "source": "Cushman & Wakefield MarketBeat PDF",
+  "source_file": "data/pdfs/cw-marketbeat-dallas-fort-worth-office-q1-2026.pdf",
+  "detected_sector": "Office",
+  "verification": {
+    "iterations": 1,
+    "remaining_issues": [],
+    "confidence": {
+      "ytd_net_absorption": {
+        "value": "117K",
+        "checks": 2,
+        "grounded": true,
+        "digits_in_source": true,
+        "cross_model_match": false,
+        "openai_value": "116,870 SF"
+      },
+      "total_vacancy": {
+        "value": "24.5%",
+        "checks": 3,
+        "grounded": true,
+        "digits_in_source": true,
+        "cross_model_match": true,
+        "openai_value": "24.5%"
+      },
+      "overall_direct_asking_rent": {
+        "value": "$34.04",
+        "checks": 3,
+        "grounded": true,
+        "digits_in_source": true,
+        "cross_model_match": true,
+        "openai_value": "$34.04"
+      },
+      "class_a_direct_asking_rent": {
+        "value": "$39.90 psf",
+        "checks": 3,
+        "grounded": true,
+        "digits_in_source": true,
+        "cross_model_match": true,
+        "openai_value": "$39.90"
+      },
+      "under_construction": {
+        "value": "2,036,871",
+        "checks": 3,
+        "grounded": true,
+        "digits_in_source": true,
+        "cross_model_match": true,
+        "openai_value": "2,036,871 SF"
+      },
+      "ytd_leasing_activity": {
+        "value": "3,291,750",
+        "checks": 3,
+        "grounded": true,
+        "digits_in_source": true,
+        "cross_model_match": true,
+        "openai_value": "3,291,750 SF"
+      }
+    },
+    "verified": true
+  },
+  "chart": {
+    "unit_left": "s.f. (millions)",
+    "unit_right": "%",
+    "rows": [
+      {
+        "yr": "2021",
+        "abs": -0.5,
+        "sup": 2.6,
+        "vac": 20.0
+      },
+      {
+        "yr": "2022",
+        "abs": 1.8,
+        "sup": 1.9,
+        "vac": 20.6
+      },
+      {
+        "yr": "2023",
+        "abs": -2.4,
+        "sup": 2.9,
+        "vac": 21.6
+      },
+      {
+        "yr": "2024",
+        "abs": -4.7,
+        "sup": 2.5,
+        "vac": 24.0
+      },
+      {
+        "yr": "2025",
+        "abs": 2.4,
+        "sup": 0.6,
+        "vac": 25.4
+      },
+      {
+        "yr": "2026",
+        "abs": 0.1,
+        "sup": null,
+        "vac": 24.6
+      }
+    ]
+  }
+}

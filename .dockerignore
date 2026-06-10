@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.local
+.git/
+.gitignore
+.DS_Store
+node_modules/
+deliverables/_*
+deliverables/*.pdf
+deliverables/*.pptx
+*.md
+data/voice/

@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cushman &amp; Wakefield — MarketBeat Intelligence</title>
+<style>
+  /* ---- Cushman & Wakefield MarketBeat palette ---- */
+  :root {
+    /* C&W brand */
+    --navy:       #1B1C3A;   /* header band, wordmark background, dark bars, primary dark text */
+    --teal:       #00A9CE;   /* Cushman cyan — PRIMARY accent: sub-heads, links, active tab, key lines */
+    --teal-d:     #0B7C97;   /* darker teal for hovers / contrast */
+    --gold:       #E8A23D;   /* amber — secondary chart series / highlights */
+    --mist:       #E9F3F7;   /* light-teal callout / outlook box background */
+    --line:       #D9DDE5;   /* hairline borders */
+    /* convenience aliases that keep the original markup working */
+    --cw-navy:    #1B1C3A;
+    --cw-teal:    #00A9CE;
+    --ink:        #2b2b2b;
+    --muted:      #5d6b73;
+    --rule:       #D9DDE5;
+    --panel:      #EEF1F4;
+    --bar-abs:    #E8A23D;   /* net absorption  (gold)  */
+    --bar-supply: #9bd6e6;   /* new supply      (light teal) */
+    --line-vac:   #00A9CE;   /* vacancy rate    (teal)  */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink); -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    width: 1280px; min-height: 720px; margin: 0 auto 96px; background: #fff;
+    padding: 0 48px 36px; position: relative;
+  }
+
+  .toolbar {
+    width: 1280px; max-width: calc(100vw - 40px); margin: 18px auto 8px;
+    display: flex; align-items: center; gap: 10px; color: #5d6b73; font-size: 13px; font-weight: 600;
+  }
+  .toolbar select {
+    margin-left: auto; background: #fff; border: 1px solid #c9d1d5; border-radius: 7px;
+    padding: 7px 12px; font-size: 13px; color: #1b1b1b; cursor: pointer; font-weight: 600;
+  }
+  .toolbar .cred { line-height: 1.4; }
+  .toolbar .cred-title { font-size: 13px; font-weight: 600; color: #5d6b73; }
+  .toolbar .cred-by { font-size: 12px; font-weight: 400; color: #7a868c; }
+  .toolbar .cred-tools { font-size: 11px; font-weight: 400; color: #9aa6ac; }
+
+  /* ---- MarketBeat header band (deep-navy masthead, C&W style) ---- */
+  header { display: flex; align-items: stretch; height: 104px; margin: 0 -48px; }
+  .logo {
+    display: flex; flex-direction: column; justify-content: center;
+    flex: 0 0 372px; padding-left: 48px; background: var(--navy); color: #fff;
+  }
+  .logo .wordmark {
+    font-size: 13px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase;
+    color: #fff; line-height: 1;
+  }
+  .logo .product {
+    font-size: 20px; font-weight: 300; letter-spacing: .2px; margin-top: 9px;
+    color: #fff; line-height: 1.15;
+  }
+  .logo .product b { font-weight: 700; }
+  .banner { flex: 1; position: relative; background: var(--navy); }
+  /* metro-agnostic deep-navy masthead with a teal sheen (no city-specific photo,
+     so any market a MarketBeat is dropped in for looks right) */
+  .banner .sky {
+    position: absolute; inset: 0;
+    background: linear-gradient(115deg, #1B1C3A 0%, #283063 58%, #0B7C97 140%);
+  }
+  .meta {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 226px;
+    background: var(--navy); color: #fff; padding: 0 26px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .meta b { font-size: 16px; font-weight: 700; }
+  .meta span { font-size: 13px; color: #b9c0e0; margin-top: 7px; letter-spacing: .2px; }
+
+  h1 {
+    font-weight: 300; font-size: 56px; letter-spacing: .3px;
+    margin: 20px 0 12px; color: #1b1b1b;
+  }
+
+  /* ---- Demographics vitals strip ---- */
+  .demo-strip { display: flex; margin: 0 0 22px; border: 1px solid #e3e8ea; border-radius: 10px; overflow: hidden; }
+  .demo-cell { flex: 1; padding: 12px 16px; border-right: 1px solid #eef1f2; }
+  .demo-cell:last-child { border-right: 0; }
+  .demo-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #8a949a; }
+  .demo-v { font-size: 20px; font-weight: 800; color: #14303b; margin-top: 3px; letter-spacing: -.3px; }
+  .demo-tag { font-size: 9px; font-weight: 700; color: #fff; background: var(--gold); padding: 1px 5px;
+    border-radius: 8px; vertical-align: middle; letter-spacing: .3px; position: relative; top: -2px; }
+  .demo-x { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+  .demo-note { font-size: 10.5px; color: #9aa6ac; line-height: 1.5; margin: 7px 2px 22px; }
+
+  /* ---- combined (Office & Industrial) metro view ---- */
+  .metro-summary { font-size: 15px; line-height: 1.65; color: #2b3640; margin: 4px 0 26px; max-width: 1000px; }
+  .combo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px 36px; margin-top: 8px; }
+  .combo-grid .chart-card { margin-bottom: 6px; }
+  .combo-grid .chart-card .cwrap { height: 210px; }
+
+  .body { display: grid; grid-template-columns: 1.32fr 1fr; gap: 44px; }
+
+  /* ---- House View (the opinion) ---- */
+  .hv-card { border: 1px solid #e3e8ea; border-left: 5px solid var(--teal); border-radius: 10px;
+    background: linear-gradient(#ffffff, #fafbfb); padding: 16px 18px; margin-bottom: 20px; }
+  .hv-top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .hv-stance { font-size: 10px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 12px; color: #fff; background: #6b777d; }
+  .hv-stance.bullish { background: #2e7d4f; }
+  .hv-stance.bearish { background: #D6492F; }
+  .hv-stance.neutral { background: #6b777d; }
+  .hv-meta { font-size: 12px; color: #44515a; } .hv-meta b { color: #1b1b1b; }
+  .hv-conv { text-transform: capitalize; color: var(--muted); }
+  .hv-asof { margin-left: auto; font-size: 10.5px; color: #9aa6ac; }
+  .hv-headline { font-size: 16px; font-weight: 700; color: #14303b; line-height: 1.3; margin-bottom: 7px; }
+  .hv-thesis { font-size: 13px; line-height: 1.6; color: #34404a; }
+  .hv-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 13px; }
+  .hv-f { font-size: 11.5px; line-height: 1.5; color: #44515a; }
+  .hv-f-l { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #8a949a; margin-bottom: 2px; }
+  .hv-track { font-size: 10.5px; color: #9aa6ac; margin-top: 12px; padding-top: 9px; border-top: 1px solid #eef1f2; }
+
+  .highlights {
+    background: var(--panel); border-left: 5px solid var(--teal);
+    padding: 17px 22px; margin-bottom: 18px;
+  }
+  .highlights ul { margin: 0; padding-left: 18px; }
+  .highlights li { font-size: 13px; line-height: 1.55; margin-bottom: 11px; }
+  .highlights li:last-child { margin-bottom: 0; }
+
+  .narrative p { font-size: 13px; line-height: 1.6; margin: 0 0 12px; color: #34404a; }
+  /* C&W MarketBeat outlook: teal sub-head sitting on a light-teal (mist) callout */
+  .outlook { color: var(--teal-d); font-weight: 700; font-size: 13px; letter-spacing: .5px;
+    text-transform: uppercase; margin: 16px 0 0; padding: 10px 14px 6px;
+    background: var(--mist); border-radius: 8px 8px 0 0; }
+  .outlook + p { background: var(--mist); margin-top: 0; padding: 0 14px 12px;
+    border-radius: 0 0 8px 8px; }
+
+  table.fund { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+  table.fund th { text-align: left; font-size: 15px; padding: 9px 4px; border-bottom: 2px solid var(--navy); }
+  table.fund th.r { text-align: right; }
+  table.fund td { font-size: 13px; padding: 10px 4px; border-bottom: 1px solid var(--rule); }
+  table.fund td.val { text-align: right; font-variant-numeric: tabular-nums; }
+  table.fund td.arrow { text-align: right; width: 34px; font-size: 15px; }
+  /* arrow color reflects whether the forecast change is GOOD or BAD for that metric,
+     not its direction — e.g. vacancy ↓ is green (good), under-development ↑ is red.
+     these GOOD/BAD semantics are intentional and stay regardless of brand palette. */
+  table.fund td.arrow.good { color: #1FA37A; }
+  table.fund td.arrow.bad  { color: #D6492F; }
+  table.fund td.arrow.neutral { color: #9aa3a8; }
+  .up { color: #1FA37A; } .down { color: #D6492F; } .flat { color: var(--muted); }
+
+  .chart-title { font-size: 16px; font-weight: 700; margin: 0; }
+  .chart-sub { font-size: 12px; color: var(--muted); margin: 2px 0 6px; }
+  .legend { display: flex; gap: 18px; font-size: 12px; color: #44515a; margin-top: 6px; }
+  .legend i { display: inline-block; width: 14px; height: 10px; margin-right: 6px; vertical-align: middle; }
+  .legend i.line { height: 0; border-top: 3px solid var(--line-vac); width: 18px; }
+  .charts { margin-top: 8px; }
+  .chart-card { margin-bottom: 18px; }
+  .chart-card .chart-h { font-size: 13px; font-weight: 700; color: #1b1b1b; margin-bottom: 3px; }
+  .chart-card .chart-h2 { font-size: 11px; color: var(--muted); margin: -1px 0 5px; }
+  .chart-card .cwrap { height: 168px; position: relative; }
+
+  /* ---- Economic Health card ---- */
+  .health-card { border: 1px solid #e3e8ea; border-radius: 10px; padding: 15px 17px; margin-bottom: 22px; background: #fff; }
+  .hc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .hc-title { font-size: 14px; font-weight: 700; color: #1b1b1b; }
+  .hc-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .hc-score { text-align: right; font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -.5px; }
+  .hc-score span { font-size: 13px; font-weight: 600; color: #9aa6ac; }
+  .hc-label { text-align: right; font-size: 11px; font-weight: 700; margin-top: 3px; }
+  .hc-meter { height: 7px; border-radius: 4px; margin: 13px 0 4px; position: relative;
+    background: linear-gradient(90deg, #e7b6b1 0%, #ecdcb4 50%, #bcd9c2 100%); }
+  .hc-needle { position: absolute; top: -3px; width: 3px; height: 13px; border-radius: 2px;
+    background: #1b1b1b; transform: translateX(-1.5px); box-shadow: 0 0 0 1.5px #fff; }
+  .hc-drivers { margin-top: 13px; display: flex; flex-direction: column; gap: 7px; }
+  .hc-row { display: grid; grid-template-columns: 108px 1fr 92px; align-items: center; gap: 9px; font-size: 11px; }
+  .hc-name { color: #44515a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hc-track { position: relative; height: 9px; background: #f0f3f4; border-radius: 5px; }
+  .hc-track::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #c9d1d5; }
+  .hc-bar { position: absolute; top: 0; height: 9px; border-radius: 5px; }
+  .hc-bar.pos { left: 50%; background: #1FA37A; }
+  .hc-bar.neg { right: 50%; background: #D6492F; }
+  .hc-z { text-align: right; font-variant-numeric: tabular-nums; color: #6b777d; font-weight: 600; }
+  .hc-note { font-size: 10.5px; color: #7a868c; line-height: 1.5; margin-top: 11px; }
+  .hc-pending { font-size: 10px; color: #9aa6ac; margin-top: 5px; font-style: italic; }
+  /* trajectory + peer comparison */
+  .hc-traj { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 11px; padding-top: 11px; border-top: 1px solid #eef1f2; }
+  .hc-traj-l { font-size: 10.5px; color: var(--muted); }
+  .hc-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 11px; white-space: nowrap; }
+  .hc-badge.up { color: #1FA37A; background: #e9f3ec; }
+  .hc-badge.down { color: #D6492F; background: #fbe9e8; }
+  .hc-badge.flat { color: #6b777d; background: #eef1f2; }
+  .hc-sec-h { font-size: 11px; font-weight: 700; color: #1b1b1b; margin: 13px 0 7px; }
+  .hc-sec-h span { font-weight: 500; color: #9aa6ac; }
+  .hc-peer { display: grid; grid-template-columns: 92px 1fr 26px; align-items: center; gap: 9px;
+    font-size: 11px; margin-bottom: 5px; }
+  .hc-peer-l { color: #6b777d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hc-peer.cur .hc-peer-l, .hc-peer.cur .hc-peer-s { color: var(--teal-d); font-weight: 700; }
+  .hc-peer-track { height: 7px; background: #f0f3f4; border-radius: 4px; overflow: hidden; }
+  .hc-peer-track i { display: block; height: 7px; border-radius: 4px; background: #c2ccd1; }
+  .hc-peer.cur .hc-peer-track i { background: var(--teal); }
+  .hc-peer-s { text-align: right; font-variant-numeric: tabular-nums; color: #6b777d; }
+
+  /* ---- Key-transactions timeline ---- */
+  .events-band { margin: 30px 0 6px; padding-top: 20px; border-top: 1px solid var(--rule); }
+  .eb-title { font-size: 16px; font-weight: 700; color: #1b1b1b; margin-bottom: 18px; }
+  .eb-title span { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .eb-lane { position: relative; display: flex; align-items: stretch; gap: 16px; }
+  .eb-lane::before { content: ""; position: absolute; left: 4px; right: 4px; bottom: 5px; height: 2px; background: #e2e7e9; }
+  /* equal-height items + absolutely-pinned dots so every dot sits ON the line */
+  .eb-item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: relative; padding-bottom: 24px; }
+  .eb-card { background: #fff; border: 1px solid #e3e8ea; border-top: 3px solid var(--c, #5d6b73);
+    border-radius: 8px; padding: 9px 11px; width: 100%; box-shadow: 0 1px 5px rgba(0,0,0,.05); flex: 1; }
+  .eb-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--c, #5d6b73); }
+  .eb-name { font-size: 12px; font-weight: 700; color: #1b1b1b; margin: 3px 0 2px; line-height: 1.25; }
+  .eb-detail { font-size: 11px; color: #44515a; line-height: 1.35; }
+  .eb-date { display: inline-block; font-size: 10px; font-weight: 700; color: var(--c, #5d6b73); margin-top: 4px; text-decoration: none; }
+  a.eb-date:hover { text-decoration: underline; }
+  .eb-msub { font-size: 10px; color: #8a949a; margin-top: 2px; }
+  .eb-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c, #5d6b73);
+    border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--c, #5d6b73);
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
+  .lw-host { max-width: 780px; }
+  .lw-host .chart-card { margin-bottom: 0; }
+  .lw-host .chart-card .cwrap { height: 230px; }
+  .eb-source { font-size: 10.5px; color: #9aa6ac; margin-top: 8px; font-style: italic; }
+
+  /* ---- MarketBeat footer (navy band, "Better never settles." tagline) ---- */
+  footer { margin-top: 24px; background: var(--navy); color: #fff; margin: 24px -48px 0;
+    padding: 20px 48px 22px; }
+  .footer-brand { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .footer-brand .fb-mark { font-size: 12px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; }
+  .footer-brand .fb-tag { font-size: 14px; font-style: italic; color: var(--teal); font-weight: 600; }
+  .contact b { font-size: 13px; color: #fff; }
+  .contact span { font-size: 12px; color: #b9c0e0; }
+  .contact a { color: var(--teal); text-decoration: none; font-size: 12px; }
+  .disclaimer { font-size: 9px; color: #8a93b8; line-height: 1.45; margin-top: 10px; }
+
+  /* ---- Market in the news (context for the Economic Health card; NOT in the score) ---- */
+  .news-card { border: 1px solid var(--line); border-top: 3px solid var(--teal); border-radius: 10px;
+    padding: 12px 14px; margin: 10px 0 0; background: #fff; }
+  .news-card .nw-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .news-card .nw-title { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .news-card .nw-sub { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  .news-card ul { list-style: none; margin: 0; padding: 0; max-height: 196px; overflow: auto; }
+  .news-card li { padding: 5px 0; border-bottom: 1px solid #f0f2f4; font-size: 12px; line-height: 1.36; }
+  .news-card li:last-child { border-bottom: 0; }
+  .news-card a { color: #28323e; text-decoration: none; }
+  .news-card a:hover { color: var(--teal-d); text-decoration: underline; }
+  .news-card .nw-src { color: var(--muted); font-size: 10.5px; }
+  .news-card .nw-foot { font-size: 10px; color: #9aa6ac; margin-top: 8px; line-height: 1.45; }
+
+  /* ---- MarketBeat Research Assistant bar ---- */
+  .assistant {
+    position: fixed; left: max(48px, calc((100vw - 1280px) / 2 + 48px)); bottom: 20px;
+    width: clamp(360px, 33vw, 530px);
+    display: flex; align-items: center; gap: 12px;
+    background: var(--navy); border-radius: 30px; padding: 8px 10px 8px 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 50;
+  }
+  .assistant .badge {
+    color: #fff; font-weight: 700; font-size: 12.5px; letter-spacing: .2px;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap; flex: 0 0 auto;
+  }
+  .assistant .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); flex: 0 0 auto; }
+  .assistant input {
+    flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent;
+    color: #fff; font-size: 14px; text-overflow: ellipsis;
+  }
+  .assistant input::placeholder { color: #8a93b8; transition: opacity .25s ease; }
+  .assistant input.fading::placeholder { opacity: 0; }
+  .assistant button {
+    border: 0; background: var(--teal); color: #fff; font-weight: 600; font-size: 13px;
+    padding: 9px 18px; border-radius: 22px; cursor: pointer;
+  }
+  .assistant button:hover { filter: brightness(1.08); }
+
+  /* Export format choice (shown when you ask the assistant to export) */
+  .export-choice {
+    position: fixed; left: max(48px, calc((100vw - 1280px) / 2 + 48px)); bottom: 74px;
+    display: none; align-items: center; gap: 10px; background: #fff; border: 1px solid #c9d1d5;
+    border-radius: 24px; padding: 8px 10px 8px 16px; box-shadow: 0 6px 24px rgba(0,0,0,.2);
+    z-index: 60; font-size: 13px; color: #1b1b1b; font-weight: 600;
+  }
+  .export-choice.show { display: flex; }
+  .export-choice button {
+    border: 0; background: var(--teal); color: #fff; font-weight: 700; font-size: 12px;
+    padding: 7px 14px; border-radius: 18px; cursor: pointer;
+  }
+  .export-choice .x { cursor: pointer; color: #9aa6ac; margin-left: 2px; }
+
+  /* Assistant reply modal — replaces native browser alert() popups */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(27,28,58,.5); backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    opacity: 0; visibility: hidden; transition: opacity .22s ease, visibility .22s ease; z-index: 200;
+  }
+  .modal-overlay.show { opacity: 1; visibility: visible; }
+  .modal-card {
+    background: #fff; width: min(520px, 100%); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0,0,0,.42);
+    transform: translateY(12px) scale(.985); transition: transform .22s ease;
+  }
+  .modal-overlay.show .modal-card { transform: translateY(0) scale(1); }
+  .modal-card .m-head {
+    background: var(--navy); color: #fff; padding: 14px 22px;
+    font-weight: 700; font-size: 13.5px; letter-spacing: .3px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .modal-card .m-head .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); }
+  .modal-card .m-body { padding: 22px; font-size: 14.5px; line-height: 1.6; color: #2b3640; }
+  .modal-card .m-foot { padding: 0 22px 20px; display: flex; justify-content: flex-end; }
+  .modal-card .m-foot button {
+    border: 0; background: var(--navy); color: #fff; font-weight: 600; font-size: 13px;
+    padding: 10px 26px; border-radius: 24px; cursor: pointer;
+  }
+  .modal-card .m-foot button:hover { filter: brightness(1.18); }
+  /* Feedback button — bottom-right, revealed only at the page bottom */
+  .feedback-btn { position: fixed; right: 24px; bottom: 24px; z-index: 70;
+    background: var(--navy); color: #fff; border: 0; border-radius: 22px; padding: 10px 18px;
+    font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.28);
+    opacity: 0; visibility: hidden; transform: translateY(10px);
+    transition: opacity .25s ease, transform .25s ease, visibility .25s ease; }
+  .feedback-btn.show { opacity: 1; visibility: visible; transform: translateY(0); }
+  .feedback-btn:hover { filter: brightness(1.18); }
+  #feedback-text { width: 100%; border: 1px solid #c9d1d5; border-radius: 8px; padding: 10px 11px;
+    font-size: 13px; font-family: inherit; color: #2b3640; resize: vertical; outline: none; }
+  #feedback-text:focus { border-color: var(--teal); }
+  .welcome-card { width: min(580px, 100%); }
+  .welcome-card .m-body { font-size: 14px; line-height: 1.6; }
+  .welcome-card .m-body p { margin: 0 0 11px; }
+  .welcome-card .m-body ul { margin: 4px 0 11px; padding-left: 20px; }
+  .welcome-card .m-body li { margin-bottom: 8px; }
+  .welcome-card .m-sign { color: #5d6b73; margin-top: 14px !important; }
+
+  /* ---- Section tab bar (Report / Source PDFs) — C&W MarketBeat styling ---- */
+  .tabbar { display: flex; align-items: stretch; gap: 4px; border-bottom: 1px solid var(--line);
+    margin: 18px 0 6px; }
+  .tabbar .sectortabs { display: flex; gap: 2px; }
+  .tabbar .tabspacer { flex: 1 1 auto; }
+  .tabbar .tab {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: .2px;
+    color: var(--muted); padding: 10px 18px 11px; border-bottom: 3px solid transparent;
+    margin-bottom: -1px; white-space: nowrap;
+  }
+  /* the section toggle (Report / Source PDFs) is secondary — smaller + lighter */
+  .tabbar .tab.section { font-size: 12px; font-weight: 600; padding: 10px 13px 11px; color: #9aa6ac; }
+  .tabbar .tab:hover { color: var(--teal-d); }
+  .tabbar .tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+  /* ---- Submarkets: 80/20 interactive map + side data panel (C&W teal vacancy palette) ---- */
+  .sm-head { margin: 14px 0 10px; }
+  .sm-title { font-size: 20px; font-weight: 300; color: #1b1b1b; }
+  .sm-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .sm-block { margin-top: 28px; }
+  .sm-split { display: flex; gap: 16px; align-items: stretch; }
+  .sm-map { position: relative; flex: 0 0 79%; max-width: 79%; align-self: flex-start;
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 2px 10px rgba(20,30,50,.05); cursor: crosshair; }
+  .sm-img { display: block; width: 100%; height: auto; }
+  /* the 20% side panel */
+  .sm-side { flex: 1 1 0; min-width: 0; border: 1px solid var(--line); border-top: 3px solid var(--teal);
+    border-radius: 12px; background: #fff; padding: 14px 15px; display: flex; flex-direction: column; }
+  .ss-cap { font-size: 11px; font-weight: 700; color: #5d6b73; letter-spacing: .2px; }
+  .ss-bar { height: 10px; border-radius: 5px; margin: 6px 0 4px;
+    background: linear-gradient(90deg, rgb(214,234,240), rgb(13,95,117)); }
+  .ss-ends { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); }
+  .ss-hint { font-size: 12px; color: var(--muted); line-height: 1.55; margin-top: 16px; }
+  .ss-name { font-size: 16px; font-weight: 700; color: var(--navy); line-height: 1.25; }
+  .ss-vac { font-size: 12px; color: #5d6b73; margin: 8px 0 12px; display: flex; align-items: baseline; gap: 6px; }
+  .ss-vac b { font-size: 22px; color: var(--teal-d); font-weight: 800; }
+  .ss-keys { font-size: 12px; color: #44515a; }
+  .ss-keys div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid #f3f5f7; }
+  .ss-keys b { color: #28323e; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ss-deeper { margin-top: 14px; border: 0; background: var(--teal); color: #fff; font-weight: 700;
+    font-size: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; width: 100%; }
+  .ss-deeper:hover { filter: brightness(1.07); }
+  .ss-back { border: 0; background: none; color: var(--teal-d); font-weight: 700; font-size: 11.5px;
+    cursor: pointer; padding: 0 0 8px; text-align: left; }
+  .ss-table { width: 100%; border-collapse: collapse; }
+  .ss-table tr { border-bottom: 1px solid #f1f3f5; }
+  .ss-table tr:last-child { border-bottom: 0; }
+  .ss-table td { padding: 6px 0; font-size: 11.5px; vertical-align: top; }
+  .ss-table td.k { color: var(--muted); padding-right: 8px; line-height: 1.3; }
+  .ss-table td.v { text-align: right; font-weight: 700; color: #28323e; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sm-foot { font-size: 11px; color: var(--muted); margin-top: 9px; }
+  @media (max-width: 720px) { .sm-split { flex-direction: column; } .sm-map { flex: none; max-width: 100%; } }
+
+  /* ---- Source PDFs panel ---- */
+  .pdfs-panel { padding: 6px 0 12px; }
+  .pdfs-head { font-size: 16px; font-weight: 700; color: var(--navy); margin: 12px 0 4px; }
+  .pdfs-sub { font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+  .pdf-list { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
+  .pdf-item { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line);
+    border-left: 4px solid var(--teal); border-radius: 10px; padding: 13px 16px; background: #fff; }
+  .pdf-ico { flex: 0 0 auto; width: 34px; height: 42px; border-radius: 4px; background: var(--mist);
+    border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; letter-spacing: .4px; color: var(--teal-d); }
+  .pdf-meta { line-height: 1.4; }
+  .pdf-name { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .pdf-file { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+    word-break: break-all; }
+  .pdf-note { font-size: 11.5px; color: #7a868c; line-height: 1.6; margin: 16px 2px 0;
+    background: var(--mist); border-radius: 8px; padding: 11px 14px; max-width: 720px; }
+  .pdf-note code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px;
+    color: var(--teal-d); background: #fff; padding: 1px 5px; border-radius: 4px;
+    border: 1px solid var(--line); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="cred">
+      <div class="cred-title">Cushman &amp; Wakefield MarketBeat — DFW Office &amp; Industrial</div>
+      <div class="cred-by">Created by Aleks Kalalouze</div>
+      <div class="cred-tools">Tools used: Claude Code · Python · Anthropic Claude · FRED API</div>
+    </div>
+  </div>
+  <div class="page">
+    <header>
+      <div class="logo">
+        <div class="wordmark">MARKETBEAT</div>
+        <div class="product">Cushman &amp; Wakefield <b>·</b> Market Intelligence</div>
+      </div>
+      <div class="banner">
+        <div class="sky"></div>
+        <div class="meta"><b>Research</b><span>Dallas/Fort Worth</span><span id="meta-period">Office&nbsp;|&nbsp;Q1 2026</span></div>
+      </div>
+    </header>
+
+    <!-- Sector tabs (Office / Industrial / Office & Industrial) -->
+    <div class="tabbar" role="tablist">
+      <span id="sector-tabs" class="sectortabs"></span>
+    </div>
+
+    <div id="report-section">
+    <h1>Dallas/Fort Worth Office</h1>
+
+    <div id="demographics" class="demo-strip"></div>
+
+    <section id="combined-view" style="display:none">
+      <p id="metro-summary" class="metro-summary"></p>
+      <p class="chart-title">Office vs Industrial — metro comparison</p>
+      <div id="combo-charts" class="combo-grid"></div>
+    </section>
+
+    <div class="body">
+      <section>
+        <div id="house-view" class="hv-card">
+          <div class="hv-top">
+            <span class="hv-stance" id="hv-stance">—</span>
+            <span class="hv-meta"><b>Report takeaway</b> <span class="hv-conv" id="hv-conv"></span></span>
+            <span class="hv-asof" id="hv-asof"></span>
+          </div>
+          <div class="hv-headline" id="hv-headline"></div>
+          <div class="hv-thesis" id="hv-thesis"></div>
+          <div class="hv-foot">
+            <div class="hv-f"><span class="hv-f-l">What to watch</span><span id="hv-change"></span></div>
+            <div class="hv-f hv-contra"><span class="hv-f-l">Risk to the read</span><span id="hv-contra"></span></div>
+          </div>
+          <div class="hv-track" id="hv-track"></div>
+        </div>
+        <div class="highlights">
+          <ul>
+            <li>Major transactions drove total space availability down, led by the 1.1-million-s.f. sale of HighPoint 2222 and the 225,000 s.f. lease by NXP Semiconductor as the company consolidates.</li>
+            <li>Austin recorded 141,405 s.f. of net absorption, with vacancy landing at 25.4% as the market continues to digest 5.6 million s.f. of speculative office delivered since 2023.</li>
+            <li>Active space requirements increased 30% year-over-year to nearly 5 million s.f. while speculative development reached its lowest level since 2013.</li>
+          </ul>
+        </div>
+        <div class="narrative">
+          <p>Austin's office market started the year with two major transactions that decreased availability as companies continued to refine workplace strategies. NXP Semiconductors leased 225,000 s.f. across Champions Office Park One and Two, trading its 1.5-million s.f. Southwest campus for modern office space in the Northwest submarket. In another significant deal, an undisclosed buyer acquired Highpoint 2222, a 1.1 million-s.f. renovated property in the Far Northwest submarket that formerly served as 3M's campus. While both transactions reduced office availability by taking space off the market, vacancy rates will not reflect the impact until they move in.</p>
+          <p>While these deals lowered availability, future vacancy levels may be influenced by the delivery of Waterline later this year. Texas's tallest tower remains fully unleased at 715,000 s.f. Currently, there is 1.8 million s.f. under construction, including Apple's preleased buildings totaling 869,726 s.f.</p>
+          <p>Despite the mixed activity, the market recorded 141,405 s.f. of net absorption. Vacancy settled at 25.4% from 25.7% in Q4 2025 as the market continues to absorb nearly 5.6 million s.f. of speculative office delivered since 2023. Asking rents have shown limited movement since Q1 2023, with market average asking rates up 1.6% to $53.85 p.s.f. FSG.</p>
+          <p class="outlook">Outlook</p>
+          <p>Looking ahead, leasing activity is expected to remain elevated as tenant demand increased 30% year-over-year from about 3.9 million s.f. of requirements in Q1 2025 to nearly 5.0 million s.f. in Q1 2026. With speculative development at its lowest level since 2013, leasing momentum will have time to absorb existing inventory in the coming quarters.</p>
+        </div>
+      </section>
+
+      <section>
+        <div id="health" class="health-card"></div>
+        <div id="news-panel" class="news-card" style="display:none"></div>
+        <table class="fund">
+          <tr><th>Fundamentals</th><th></th><th class="r">Forecast</th></tr>
+          <tr><td>YTD net absorption</td><td class="val">141,405 s.f.</td><td class="arrow up good">↑</td></tr>
+          <tr><td>Total vacancy</td><td class="val">25.4%</td><td class="arrow down good">↓</td></tr>
+          <tr><td>Class A direct asking rent</td><td class="val">$60.58 p.s.f.</td><td class="arrow up good">↑</td></tr>
+          <tr><td>Overall direct asking rent</td><td class="val">$53.85 p.s.f.</td><td class="arrow flat neutral">→</td></tr>
+          <tr><td>Concessions</td><td class="val">Stable</td><td class="arrow flat neutral">→</td></tr>
+          <tr><td>Under development</td><td class="val">1.77 million s.f.</td><td class="arrow down good">↓</td></tr>
+          <tr><td>Preleased</td><td class="val">54.1%</td><td class="arrow flat neutral">→</td></tr>
+        </table>
+
+        <p class="chart-title">Market trends</p>
+        <div id="charts" class="charts"></div>
+      </section>
+    </div>
+
+    <section id="events" class="events-band">
+      <div class="eb-title">Key transactions <span id="eb-sub"></span></div>
+      <div class="eb-lane" id="eb-lane"></div>
+    </section>
+
+    <section id="announce-band" class="events-band">
+      <div class="eb-title">Key city announcements <span id="an-sub"></span></div>
+      <div class="eb-lane" id="an-lane"></div>
+    </section>
+
+    <section id="lease-wall-band" class="events-band">
+      <div class="eb-title">Lease expiration wall <span id="lw-sub"></span></div>
+      <div id="lease-wall" class="lw-host"></div>
+      <div id="lw-source" class="eb-source"></div>
+    </section>
+
+    <section id="permits-band" class="events-band">
+      <div class="eb-title">Development pipeline <span id="pm-sub"></span></div>
+      <div id="permits-chart" class="lw-host"></div>
+    </section>
+    <!-- Submarket map (below everything): the real C&W MarketBeat map shaded by vacancy in their
+         teal palette. 80/20 split — hover a submarket to load the side panel, "dive deeper" to see
+         its full Market-Statistics row transposed (columns become rows). -->
+    <section id="submarkets-section" class="sm-block" style="display:none">
+      <div class="sm-head">
+        <div>
+          <div class="sm-title" id="sm-title">Submarkets</div>
+          <div class="sm-sub" id="sm-sub"></div>
+        </div>
+      </div>
+      <div class="sm-split">
+        <div id="sm-map" class="sm-map">
+          <img id="sm-img" class="sm-img" alt="Submarket vacancy map">
+        </div>
+        <aside id="sm-side" class="sm-side"></aside>
+      </div>
+      <div class="sm-foot" id="sm-foot"></div>
+    </section>
+    </div><!-- /#report-section -->
+
+    <footer>
+      <div class="footer-brand">
+        <span class="fb-mark">MARKETBEAT</span>
+        <span class="fb-tag">Better never settles.</span>
+      </div>
+      <div class="contact">
+        <b>Data sources</b> &nbsp;<span>Market figures from Cushman &amp; Wakefield MarketBeat reports · macro, demographics &amp; wages from FRED, U.S. Census Bureau &amp; BLS.</span>
+      </div>
+      <p class="disclaimer">
+        Prepared by Aleks Kalalouze for presentation and demonstration purposes — not an official
+        Cushman &amp; Wakefield publication. 2026E figures are projected estimates and may differ from
+        final data; subject to revision without notice.
+      </p>
+    </footer>
+  </div>
+
+  <!-- Export format choice -->
+  <div class="export-choice" id="export-choice">
+    <span>Export this report as:</span>
+    <button onclick="downloadDeck('pdf'); hideExport()">PDF</button>
+    <button onclick="downloadDeck('pptx'); hideExport()">PowerPoint</button>
+    <span class="x" onclick="hideExport()">✕</span>
+  </div>
+
+  <!-- Assistant reply modal (professional replacement for native alert popups) -->
+  <div class="modal-overlay" id="modal" onclick="if(event.target===this)hideModal()">
+    <div class="modal-card">
+      <div class="m-head"><span class="dot"></span><span id="modal-title">MarketBeat Research Assistant</span></div>
+      <div class="m-body" id="modal-body"></div>
+      <div class="m-foot"><button onclick="hideModal()">Got it</button></div>
+    </div>
+  </div>
+
+  <!-- Feedback: bottom-right, appears only at the page bottom so it never covers a graph -->
+  <button id="feedback-btn" class="feedback-btn" onclick="openFeedback()">✉&nbsp; Feedback</button>
+  <div class="modal-overlay" id="feedback-modal" onclick="if(event.target===this)closeFeedback()">
+    <div class="modal-card">
+      <div class="m-head"><span class="dot"></span><span>Share feedback with Aleks</span></div>
+      <div class="m-body">
+        <p style="margin:0 0 9px; font-size:13px; color:#5d6b73;">What's useful, what's missing, what to improve? It comes straight to me.</p>
+        <textarea id="feedback-text" rows="5" placeholder="Your feedback…"></textarea>
+        <input id="feedback-email" type="email" placeholder="Your email (optional — for a reply)"
+               style="width:100%;margin-top:8px;border:1px solid #c9d1d5;border-radius:8px;padding:9px 11px;font-size:13px;" />
+      </div>
+      <div class="m-foot"><button onclick="sendFeedback()">Send to Aleks</button></div>
+    </div>
+  </div>
+
+  <!-- One-time welcome note for the Cushman Investment Sales team (shown once per session) -->
+  <div class="modal-overlay" id="welcome" onclick="if(event.target===this)closeWelcome()">
+    <div class="modal-card welcome-card">
+      <div class="m-head"><span class="dot"></span><span>Welcome to the Cushman Investment Sales team</span></div>
+      <div class="m-body">
+        <p>Welcome, Cushman <b>Investment Sales</b> team — this is an internal market-intelligence dashboard built to
+        keep you current on the market: prices, live fundamentals (vacancy, net absorption, rents, new supply), the
+        economic backdrop driving demand, and a quick, sourced read — all in one place. It's a <b>first edition</b>,
+        so I'm learning which features are most useful to you and will refine them from there.</p>
+        <p>I did my best to use the most current data, but working only with <b>public sources</b> means some
+        figures are dated and could be sharper with better access.</p>
+        <p>A few things worth knowing:</p>
+        <ul>
+          <li><b>Ask the assistant anything</b> — including <i>how I arrived at any number</i>. It can walk you
+          through the source and the method behind every figure; the source for a majority of the market data is
+          <b>Cushman's MarketBeat reports</b>, so it holds up in a pitch or an underwriting.</li>
+          <li>The market read is <b>trained on our Cushman &amp; Wakefield MarketBeat reports</b> — I've tuned the
+          assistant on those reports, and it'll keep being reiterated and refined over time.</li>
+          <li>I'd genuinely <b>welcome your feedback</b>.</li>
+        </ul>
+        <p class="m-sign">Thanks for taking a look.<br>— Aleks Kalalouze</p>
+      </div>
+      <div class="m-foot"><button onclick="closeWelcome()">Explore the dashboard</button></div>
+    </div>
+  </div>
+
+  <!-- MarketBeat Research Assistant: talk to it to adjust this report -->
+  <div class="assistant">
+    <span class="badge"><span class="dot"></span>MarketBeat Assistant</span>
+    <input id="ask" placeholder="Ask about this market…" />
+    <button onclick="ask()">Send</button>
+  </div>
+
+<script>
+  // ---- interactive charts (rendered from data specs; more can be added server-side) ----
+  let chartInstancesByHost = {};
+  function renderCharts(specs, hostId = "charts") {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    (chartInstancesByHost[hostId] || []).forEach(c => c.destroy());
+    chartInstancesByHost[hostId] = [];
+    host.innerHTML = "";
+    (specs || []).forEach(spec => {
+      const card = document.createElement("div"); card.className = "chart-card";
+      const h = document.createElement("div"); h.className = "chart-h"; h.textContent = spec.title || "";
+      card.appendChild(h);
+      if (spec.subtitle) {
+        const sh = document.createElement("div"); sh.className = "chart-h2"; sh.textContent = spec.subtitle;
+        card.appendChild(sh);
+      }
+      const wrap = document.createElement("div"); wrap.className = "cwrap";
+      const cv = document.createElement("canvas"); wrap.appendChild(cv);
+      card.appendChild(wrap); host.appendChild(card);
+      const combo = spec.type === "combo";
+      const datasets = spec.series.map(s => {
+        const isLine = combo ? s.type === "line" : spec.type !== "column";
+        return {
+          type: isLine ? "line" : "bar", label: s.name, data: s.values,
+          backgroundColor: s.color, borderColor: s.color, borderWidth: isLine ? 2.5 : 0,
+          pointRadius: isLine ? 3 : 0, tension: 0.3, fill: false,
+          yAxisID: combo && s.axis === "right" ? "y1" : "y",
+          order: isLine ? 0 : 1,  // line drawn on top of bars
+        };
+      });
+      // grace keeps data off the very top/bottom gridline on every chart
+      const pctTick = v => String(Math.round(v * 10) / 10) + "%";  // 1 dp max, kills float noise (e.g. 15.848…%)
+      const yScale = { grid: { color: "#eef1f2" }, grace: "14%", ticks: { font: { size: 10 }, color: "#8a949a" } };
+      if (spec.percent) {  // never floor data against the axis — leave breathing room, but stay >= 0
+        const vals = (spec.series || []).flatMap(s => (s.values || []).filter(v => v != null));
+        const anyNeg = vals.some(v => v < 0);
+        if (!anyNeg && vals.length) {
+          const lo = Math.min(...vals), hi = Math.max(...vals);
+          const range = (hi - lo) || 1;
+          // breathing room below the low, snapped DOWN to a round value that lines up with the
+          // tick step — so the bottom label isn't an odd one out (e.g. a 17 wedged under 18,20,22…)
+          const snap = range >= 8 ? 5 : range >= 4 ? 2 : range >= 1.5 ? 1 : 0.5;
+          yScale.min = Math.max(0, Math.floor((lo - range * 0.12) / snap) * snap);
+        }
+        yScale.ticks.callback = pctTick;
+      }
+      else if (spec.percentSigned || spec.leftPercent) { yScale.ticks.callback = pctTick; }  // % incl. negatives
+      const scales = { y: yScale, x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#5d6b73" } } };
+      if (combo) {  // second axis on the right for the driver line
+        const right = spec.series.find(s => s.axis === "right") || {};
+        scales.y1 = { position: "right", grid: { display: false }, grace: "14%",
+          ticks: { font: { size: 10 }, color: "#8a949a", callback: right.percent ? pctTick : undefined } };
+      }
+      if (spec.stacked) { scales.x.stacked = true; yScale.stacked = true; }
+      chartInstancesByHost[hostId].push(new Chart(cv, {
+        data: { labels: spec.categories, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: spec.series.length > 1, position: "bottom", labels: { font: { size: 10 }, boxWidth: 12 } } },
+          scales,
+        },
+      }));
+    });
+  }
+  renderCharts([
+    { type: "line", title: "Total vacancy rate", percent: true, categories: ["2022", "2023", "2024", "2025", "YTD 2026"],
+      series: [{ name: "Total Vacancy", values: [18.2, 22.0, 25.3, 25.8, 25.6], color: "#00A9CE" }] },
+    { type: "column", title: "Net absorption & new supply", categories: ["2022", "2023", "2024", "2025", "YTD 2026"],
+      series: [{ name: "Net Absorption", values: [0.5, -1.5, 0.3, 0.2, 0.1], color: "#E8A23D" },
+               { name: "New Supply", values: [3.4, 1.3, 3.4, 1.1, 0.0], color: "#9bd6e6" }] },
+  ]);
+
+  // ---- live data + market switching ----
+  let currentKey = null;
+  const ARROW = { up: ["↑", "up"], down: ["↓", "down"], flat: ["→", "flat"] };
+  // green when the forecast direction is GOOD for that metric, red when bad, gray when flat/unknown.
+  function arrowGood(label, dir) {
+    if (!dir || dir === "flat") return "neutral";
+    const l = (label || "").toLowerCase();
+    if (/vacanc|concession|under develop|under construct|sublease|cap rate/.test(l))
+      return dir === "down" ? "good" : "bad";   // these are healthier moving DOWN
+    if (/absorption|\brent|preleas|occup|employ|\bjobs?\b|population|income/.test(l))
+      return dir === "up" ? "good" : "bad";      // these are healthier moving UP
+    return "neutral";
+  }
+
+  function populate(d) {
+    if (!d || d.error) return;
+    if (d.market) document.querySelector("h1").textContent = `${d.market} ${d.sector || ""}`.trim();
+    // (masthead is a fixed navy gradient — no per-metro photo to swap)
+    // combined tab → metro summary + Office-vs-Industrial comparison grid (hide single-sector body)
+    const cv = document.getElementById("combined-view");
+    if (d.combined) {
+      document.querySelector(".body").style.display = "none";
+      cv.style.display = "";
+      document.getElementById("metro-summary").textContent = d.summary || "";
+      renderCharts(d.combo_charts || [], "combo-charts");
+    } else {
+      document.querySelector(".body").style.display = "";
+      cv.style.display = "none";
+    }
+    const mp = document.getElementById("meta-period");
+    if (mp && d.period) mp.textContent = `${d.sector || ""} | ${d.period}`;
+    if (d.bullets && d.bullets.length)
+      document.querySelector(".highlights ul").innerHTML = d.bullets.map(b => `<li>${b}</li>`).join("");
+    const nar = document.querySelector(".narrative");
+    if (nar && (d.narrative || d.outlook))
+      nar.innerHTML = (d.narrative || []).map(p => `<p>${p}</p>`).join("") +
+        (d.outlook ? `<p class="outlook">Outlook</p><p>${d.outlook}</p>` : "");
+    if (d.kpis && d.kpis.length) {
+      const rows = d.kpis.map(k => { const a = ARROW[k.forecast] || ARROW.flat;
+        return `<tr><td>${k.label}</td><td class="val">${k.value == null ? "—" : k.value}</td><td class="arrow ${a[1]} ${arrowGood(k.label, k.forecast)}">${a[0]}</td></tr>`; }).join("");
+      document.querySelector("table.fund").innerHTML =
+        `<tr><th>Fundamentals</th><th></th><th class="r">Forecast</th></tr>` + rows;
+    }
+    if (d.charts && d.charts.length) renderCharts(d.charts);
+    renderHealth(d.health);
+    renderNews(d.news);
+    renderSubmarketMap(d.submarkets);
+    renderEvents(d.events, d.period);
+    renderAnnouncements(d.announcements, d.period);
+    renderHouseView(d.house_view);
+    renderDemographics(d.demographics);
+    renderPermits(d.permits);
+    const lwBand = document.getElementById("lease-wall-band");
+    if (d.lease_wall) {
+      lwBand.style.display = "";
+      document.getElementById("lw-sub").textContent = d.lease_wall.subtitle ? "· " + d.lease_wall.subtitle : "";
+      document.getElementById("lw-source").textContent = d.lease_wall.source || "";
+      renderCharts([d.lease_wall], "lease-wall");
+    } else if (lwBand) { lwBand.style.display = "none"; }
+  }
+
+  // Demographics vitals (Census via FRED) + live development-pipeline permits.
+  function renderDemographics(d) {
+    const el = document.getElementById("demographics");
+    if (!el) return;
+    if (!d) { el.style.display = "none"; return; }
+    el.style.display = "";
+    const cells = [];
+    if (d.population) {
+      const p = d.population;
+      const r = p.proj_rate_pct != null ? ` · proj +${p.proj_rate_pct}%/yr` : "";
+      if (p.proj_m) {  // projection headline (tagged), actual + the rate used underneath
+        cells.push(["Population",
+          `${p.proj_m}M <span class="demo-tag">${p.proj_year}E</span>`,
+          `${p.year} actual ${p.value_m}M${r}`]);
+      } else {
+        cells.push(["Population", p.value_m + "M", p.year]);
+      }
+      if (p.cagr5_pct != null)
+        cells.push(["Pop. growth (5y)", (p.cagr5_pct >= 0 ? "+" : "") + p.cagr5_pct + "%", "CAGR, annualized"]);
+    }
+    if (d.median_income) {
+      const m = d.median_income;
+      const r = m.proj_rate_pct != null ? ` · proj +${m.proj_rate_pct}%/yr` : "";
+      cells.push(["Median HH income", `$${m.proj.toLocaleString()} <span class="demo-tag">${m.proj_year}E</span>`,
+        `${m.year} actual $${m.value.toLocaleString()}${r}`]);
+    }
+    if (d.avg_wage) {
+      const w = d.avg_wage;
+      cells.push(["Avg wage / job", "$" + w.annual.toLocaleString(),
+        `${w.period}${w.yoy_pct != null ? " · +" + w.yoy_pct + "% y/y" : ""}`]);
+    }
+    if (d.median_age) cells.push(["Median age", d.median_age.value, "ACS " + d.median_age.year]);
+    if (d.bachelors_plus) cells.push(["Bachelor's+", d.bachelors_plus.value + "%", "ACS " + d.bachelors_plus.year]);
+    el.innerHTML = cells.map(c =>
+      `<div class="demo-cell"><div class="demo-k">${c[0]}</div><div class="demo-v">${c[1]}</div><div class="demo-x">${c[2]}</div></div>`).join("");
+  }
+
+  function renderPermits(pm) {
+    const band = document.getElementById("permits-band");
+    if (!band) return;
+    if (!pm || !pm.chart) { band.style.display = "none"; return; }
+    band.style.display = "";
+    const yoy = pm.yoy_pct != null ? ` · ${pm.yoy_pct >= 0 ? "+" : ""}${pm.yoy_pct}% vs a year ago` : "";
+    const live = pm.live ? " ● live" : "";
+    document.getElementById("pm-sub").textContent =
+      `· ${pm.ttm.toLocaleString()} trailing 12mo${yoy} · ${pm.source}${live}`;
+    renderCharts([pm.chart], "permits-chart");
+  }
+
+  // House View — the opinionated, versioned call (in your voice once samples exist).
+  // Market-in-the-news panel, connected to the Economic Health card. Context only — these
+  // headlines do NOT feed the health score.
+  function renderNews(news) {
+    const el = document.getElementById("news-panel");
+    if (!el) return;
+    if (!news || !Array.isArray(news.items) || !news.items.length) { el.style.display = "none"; return; }
+    el.style.display = "";
+    el.innerHTML =
+      `<div class="nw-head"><span class="nw-title">Market in the news</span>
+         <span class="nw-sub">${news.total} DFW CRE stories · last 30 days</span></div>
+       <ul>${news.items.map(it => `<li><a href="${it.url}" target="_blank" rel="noopener">${it.headline}</a>
+         <span class="nw-src">— ${it.source}${it.date ? " · " + it.date : ""}</span></li>`).join("")}</ul>
+       <div class="nw-foot">Live DFW commercial-real-estate headlines (GDELT, Google News, NewsAPI &amp; trade RSS),
+         deduped — context alongside the read, <b>not</b> part of the health score. Updated ${news.updated || ""}.</div>`;
+  }
+
+  function renderHouseView(hv) {
+    const el = document.getElementById("house-view");
+    if (!el) return;
+    if (!hv || !hv.headline) { el.style.display = "none"; return; }
+    el.style.display = "";
+    // factual report takeaway (not a personal bull/bear call) — fixed neutral tag
+    const badge = document.getElementById("hv-stance");
+    badge.textContent = "Takeaway"; badge.className = "hv-stance neutral";
+    document.getElementById("hv-conv").textContent = "";
+    document.getElementById("hv-asof").textContent = hv.as_of || "";
+    document.getElementById("hv-headline").textContent = hv.headline || "";
+    document.getElementById("hv-thesis").textContent = hv.thesis || "";
+    document.getElementById("hv-change").textContent = hv.what_would_change || "—";
+    const contraWrap = el.querySelector(".hv-contra");
+    if (hv.contrarian && String(hv.contrarian).toLowerCase() !== "null") {
+      document.getElementById("hv-contra").textContent = hv.contrarian; contraWrap.style.display = "";
+    } else { contraWrap.style.display = "none"; }
+    const track = document.getElementById("hv-track");
+    const hist = hv.history || [];
+    if (hist.length > 1) {
+      const periods = hist.map(h => h.period || h.as_of).filter(Boolean).join(" · ");
+      track.textContent = `Refreshed each quarter (${hist.length}): ${periods}`;
+    } else {
+      track.textContent =
+        "Drawn from the Cushman & Wakefield MarketBeat and live market data, refreshed each quarter.";
+    }
+  }
+
+  // Key transactions — annotated markers along a timeline lane.
+  const EVENT_COLORS = { lease: "#00A9CE", sale: "#E8A23D", development: "#1B1C3A" };
+  function renderEvents(events, period) {
+    const band = document.getElementById("events"), lane = document.getElementById("eb-lane");
+    if (!band || !lane) return;
+    if (!events || !events.length) { band.style.display = "none"; return; }
+    band.style.display = "";
+    document.getElementById("eb-sub").textContent = period ? "· " + period : "";
+    lane.innerHTML = events.slice(0, 6).map(e => {
+      const c = EVENT_COLORS[(e.type || "").toLowerCase()] || "#5d6b73";
+      const label = e.date ? fmtYM(e.date) : (period || "");
+      const dateHtml = e.source_url
+        ? `<a class="eb-date" href="${e.source_url}" target="_blank" rel="noopener">${label} ↗</a>`
+        : `<div class="eb-date">${label}</div>`;
+      return `<div class="eb-item" style="--c:${c}">
+        <div class="eb-card">
+          <div class="eb-tag">${e.type || "deal"}${e.sector ? " · " + e.sector : ""}</div>
+          <div class="eb-name">${e.title || ""}</div>
+          <div class="eb-detail">${e.detail || ""}</div>
+          ${e.submarket ? `<div class="eb-msub">${e.submarket}</div>` : ""}
+          ${dateHtml}
+        </div>
+        <div class="eb-dot"></div></div>`;
+    }).join("");
+  }
+  function fmtYM(ym) {
+    if (!ym) return "";
+    const mo = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const [y, m] = String(ym).split("-");
+    return m ? (mo[+m] || "") + " " + y : y;
+  }
+
+  // Key city announcements — civic/development projects shaping the market.
+  const ANNOUNCE_COLORS = { transit: "#00A9CE", civic: "#2e7d4f", development: "#1B1C3A",
+    infrastructure: "#E8A23D", megasite: "#0B7C97" };
+  function renderAnnouncements(items, period) {
+    const band = document.getElementById("announce-band"), lane = document.getElementById("an-lane");
+    if (!band || !lane) return;
+    if (!items || !items.length) { band.style.display = "none"; return; }
+    band.style.display = "";
+    document.getElementById("an-sub").textContent = "· civic & development projects shaping the market";
+    lane.innerHTML = items.slice(0, 4).map(a => {
+      const c = ANNOUNCE_COLORS[(a.type || "").toLowerCase()] || "#5d6b73";
+      const label = a.date ? fmtYM(a.date) : "";
+      const dateHtml = a.source_url
+        ? `<a class="eb-date" href="${a.source_url}" target="_blank" rel="noopener">${label || "source"} ↗</a>`
+        : (label ? `<div class="eb-date">${label}</div>` : "");
+      return `<div class="eb-item" style="--c:${c}">
+        <div class="eb-card">
+          <div class="eb-tag">${a.type || "announcement"}${a.sector ? " · " + a.sector : ""}</div>
+          <div class="eb-name">${a.title || ""}</div>
+          <div class="eb-detail">${a.detail || ""}</div>
+          ${dateHtml}
+        </div>
+        <div class="eb-dot"></div></div>`;
+    }).join("");
+  }
+
+  // Economic Health — gauge + driver decomposition (diverging bars).
+  let _healthData = null;
+  function renderHealth(h, active) {
+    const el = document.getElementById("health");
+    if (!el) return;
+    if (!h || h.score == null) { el.style.display = "none"; return; }
+    el.style.display = "";
+    _healthData = h;
+    // peer_cards carries the FULL identically-computed card for every Texas Big-4 metro,
+    // so clicking a peer swaps the displayed breakdown to that city.
+    const cards = h.peer_cards || {};
+    const homeMkt = ((h.peers || []).find(p => p.current) || {}).key || null;
+    const activeMkt = active || homeMkt;
+    const card = cards[activeMkt] || h;            // the card currently displayed
+    const col = card.score >= 58 ? "#1FA37A" : card.score >= 42 ? "#bd8b2c" : "#D6492F";
+    const maxc = Math.max(0.01, ...card.components.map(c => Math.abs(c.contribution)));
+    const rows = card.components.map(c => {
+      const w = Math.min(44, Math.abs(c.contribution) / maxc * 42);  // leave headroom — never fills the track
+      const cls = c.contribution >= 0 ? "pos" : "neg";
+      const right = c.detail || "";  // plain figure only — never a raw score
+      return `<div class="hc-row" title="${c.confidence || ""}">
+        <span class="hc-name">${c.label}</span>
+        <span class="hc-track"><span class="hc-bar ${cls}" style="width:${w}%"></span></span>
+        <span class="hc-z">${right}</span></div>`;
+    }).join("");
+    const pending = (card.pending && card.pending.length)
+      ? `<div class="hc-pending">Pending data: ${card.pending.join(" · ")}</div>` : "";
+    // trajectory: sparkline of the score over time + direction badge
+    let traj = "";
+    if (card.trend && card.trend.length > 1) {
+      const dir = card.direction === "Improving" ? "up" : card.direction === "Easing" ? "down" : "flat";
+      const arr = dir === "up" ? "▲" : dir === "down" ? "▼" : "→";
+      traj = `<div class="hc-traj">
+        <span class="hc-traj-l">Trajectory ${card.trend[0].period.replace("YTD ", "")}–${card.trend[card.trend.length - 1].period.replace("YTD ", "")}</span>
+        ${sparkline(card.trend)}
+        <span class="hc-badge ${dir}">${arr} ${card.direction || ""}</span></div>`;
+    }
+    // peer comparison — every metro is clickable to view its own breakdown
+    let peers = "";
+    if (h.peers && h.peers.length) {
+      const bars = h.peers.map(p => `<div class="hc-peer ${p.key === activeMkt ? "cur" : ""}" style="cursor:pointer"
+        onclick="renderHealth(_healthData,'${(p.key || "").replace(/'/g, "")}')">
+        <span class="hc-peer-l">${p.label}</span>
+        <span class="hc-peer-track"><i style="width:${p.score}%"></i></span>
+        <span class="hc-peer-s">${p.score}</span></div>`).join("");
+      const aRank = h.peers.findIndex(p => p.key === activeMkt) + 1;
+      const rank = aRank ? `· #${aRank} of ${h.peer_count} · peer avg ${h.peer_avg}` : "";
+      peers = `<div class="hc-sec-h">How it compares <span>${rank} · click a metro</span></div>${bars}`;
+    }
+    const back = (activeMkt && homeMkt && activeMkt !== homeMkt)
+      ? ` <span style="cursor:pointer;color:var(--teal);font-weight:600;font-size:11px"
+            onclick="renderHealth(_healthData,'${homeMkt.replace(/'/g, "")}')">↩ ${homeMkt}</span>` : "";
+    el.innerHTML =
+      `<div class="hc-head">
+         <div><div class="hc-title">${card.title || "Market Health"}${back}</div>
+              <div class="hc-sub">${card.subtitle || "How this metro's economy compares"}</div></div>
+         <div><div class="hc-score" style="color:${col}">${card.score}<span>/100</span></div>
+              <div class="hc-label" style="color:${col}">${card.label || ""}</div></div>
+       </div>
+       <div class="hc-meter"><span class="hc-needle" style="left:${card.score}%"></span></div>
+       <div class="hc-drivers">${rows}</div>
+       ${traj}${peers}
+       <div class="hc-note">${card.note || ""}</div>${pending}`;
+  }
+
+  // tiny inline sparkline for the score trajectory
+  function sparkline(trend) {
+    const w = 120, h = 28, pad = 3, n = trend.length;
+    const sc = trend.map(t => t.score);
+    const lo = Math.min(...sc), hi = Math.max(...sc), sp = (hi - lo) || 1;
+    const xs = trend.map((_, i) => pad + i * (w - 2 * pad) / (n - 1));
+    const ys = sc.map(v => h - pad - (v - lo) / sp * (h - 2 * pad));
+    const pts = xs.map((x, i) => `${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
+    return `<svg width="${w}" height="${h}" style="flex:0 0 auto">
+      <polyline points="${pts}" fill="none" stroke="#0B7C97" stroke-width="1.6"
+        stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${xs[n - 1].toFixed(1)}" cy="${ys[n - 1].toFixed(1)}" r="2.5" fill="#0B7C97"/></svg>`;
+  }
+
+  // ---- Submarket map: the real C&W MarketBeat map, recolored by vacancy. Hotspot
+  //      positions (% of the map image) sit over each region's label for hover detail. ----
+  const MAP_XY = {
+    office: {
+      "Legacy/Frisco":[70.0,16.5],"Richardson/Plano":[88.3,24.4],"Lewisville/Carrollton":[52.5,30.9],
+      "Far North Dallas":[72.2,38.6],"Las Colinas":[54.2,39.7],"North Fort Worth":[15.9,41.9],
+      "Southlake/Westlake":[38.3,41.9],"LBJ Freeway":[72.7,45.2],"Preston Center":[64.2,50.4],
+      "North Central Expressway":[82.8,51.2],"West Love Field":[66.2,57.9],"Uptown/Turtle Creek":[72.7,61.2],
+      "CBD Core":[74.2,65.6],"Deep Ellum/East Dallas":[85.4,59.2],"East Fort Worth":[25.9,61.7],
+      "Mid Cities":[46.7,65.0],"Fort Worth CBD":[18.2,67.8],"West Fort Worth":[7.6,71.6],
+      "South Fort Worth":[18.3,81.5],"Southwest Dallas":[70.9,81.5],
+    },
+    industrial: {
+      "Far North/I-35":[29.2,33.1],"Alliance":[18.3,50.9],"DFW Airport":[39.2,60.2],
+      "Valwood/N Stemmons":[53.3,50.5],"Allen/McKinney":[75.9,30.3],"Richardson/Plano":[73.3,49.0],
+      "North Dallas/Metropolitan":[59.2,56.5],"Walnut Hill/Stemmons":[55.0,64.2],"North Fort Worth":[17.5,66.1],
+      "Garland":[74.2,62.4],"East Dallas Suburbs":[91.7,67.0],"West Fort Worth":[5.9,74.9],
+      "East Fort Worth":[25.9,76.7],"Brookhollow/Trinity":[55.9,71.2],"Central Dallas":[66.7,74.3],
+      "Pinnacle/Turnpike":[55.9,76.7],"Mesquite":[76.7,78.0],"Central Fort Worth":[15.9,79.8],
+      "Great Southwest":[35.0,86.3],"Redbird":[51.7,86.3],"South Dallas":[68.3,91.8],
+      "South Fort Worth":[18.3,95.4],"Ellis County":[65.7,98.6],"Johnson County":[15.2,98.6],
+    },
+  };
+  function _smSF(v){ if(v==null) return "—"; const a=Math.abs(v), s=v<0?"-":"";
+    return s+(a>=1e6?(a/1e6).toFixed(2)+"M":a>=1e3?Math.round(a/1e3)+"K":Math.round(a))+" sf"; }
+  function _smRent(v){ return v==null ? "—" : "$"+v; }
+  let _smByName={}, _smKey="office", _smRentLabels={primary:"Asking rent",secondary:"Class A rent"},
+      _smVmin=0, _smVmax=0, _smGrid=null, _smGridCache={}, _smCur=null, _smHandlersOn=false;
+
+  function renderSubmarketMap(sub){
+    const sec=document.getElementById("submarkets-section");
+    if(!sec) return;
+    if(!sub || !Array.isArray(sub.submarkets) || !sub.submarkets.length){ sec.style.display="none"; return; }
+    sec.style.display="";
+    const subs=sub.submarkets, office = sub.sector==="Office";
+    _smKey = office ? "office" : "industrial";
+    _smRentLabels = office ? {primary:"Asking rent (all)", secondary:"Class A rent"}
+                           : {primary:"Net rent (overall)", secondary:"Whse/Dist rent"};
+    _smByName = Object.fromEntries(subs.map(s=>[s.name,s]));
+    _smCur = null;
+    document.getElementById("sm-img").src=`/assets/submap_${_smKey}.png`;
+    document.getElementById("sm-title").textContent=`${sub.market} ${sub.sector} — submarkets`;
+    document.getElementById("sm-sub").textContent=
+      `${subs.length} submarkets · shaded by vacancy in Cushman & Wakefield's palette (pale = low, deep teal = high) · hover the map`;
+    const vacs=subs.map(s=>s.vacancy_pct).filter(v=>v!=null);
+    _smVmin=Math.min(...vacs); _smVmax=Math.max(...vacs);
+    _smGrid = _smGridCache[_smKey] || null;          // region-id grid -> accurate hit-testing
+    if(!_smGrid){ const k=_smKey; fetch(`/assets/submap_${k}_regions.json`).then(r=>r.json())
+        .then(g=>{ _smGridCache[k]=g; if(_smKey===k) _smGrid=g; }).catch(()=>{}); }
+    const map=document.getElementById("sm-map");
+    if(map && !_smHandlersOn){ _smHandlersOn=true; map.addEventListener("mousemove", smHover); }
+    smSideDefault();
+    document.getElementById("sm-foot").textContent =
+      "The Cushman & Wakefield MarketBeat submarket map, shaded by Q1 2026 vacancy. Hover a submarket, then dive deeper for its full Market-Statistics figures.";
+  }
+
+  // which submarket is under the cursor — region grid first (true outlines), nearest-label fallback
+  function _smRegionAt(e){
+    const img=document.getElementById("sm-img"); if(!img) return null;
+    const r=img.getBoundingClientRect();
+    const u=(e.clientX-r.left)/r.width, v=(e.clientY-r.top)/r.height;
+    if(u<0||u>1||v<0||v>1) return null;
+    if(_smGrid){
+      const gx=Math.min(_smGrid.w-1,Math.max(0,Math.floor(u*_smGrid.w)));
+      const gy=Math.min(_smGrid.h-1,Math.max(0,Math.floor(v*_smGrid.h)));
+      const idx=_smGrid.grid[gy*_smGrid.w+gx];
+      if(idx>=0){ const s=_smByName[_smGrid.names[idx]]; if(s) return s; }
+    }
+    const xy=MAP_XY[_smKey]||{}, U=u*100, V=v*100; let best=null, bd=1e9;
+    for(const n in xy){ const p=xy[n], d=(U-p[0])**2+(V-p[1])**2; if(d<bd&&_smByName[n]){bd=d;best=n;} }
+    return best?_smByName[best]:null;
+  }
+  function smHover(e){
+    const s=_smRegionAt(e);
+    if(s && (!_smCur || _smCur.name!==s.name)){ _smCur=s; smSideHover(s); }
+  }
+
+  function smSideDefault(){
+    const el=document.getElementById("sm-side"); if(!el) return;
+    el.innerHTML =
+      `<div class="ss-cap">VACANCY</div><div class="ss-bar"></div>
+       <div class="ss-ends"><span>${_smVmin.toFixed(1)}% low</span><span>high ${_smVmax.toFixed(1)}%</span></div>
+       <div class="ss-hint">Hover a submarket on the map to see its vacancy and key stats — then <b>dive deeper</b> for the full figures.</div>`;
+  }
+  function smSideHover(s){
+    const el=document.getElementById("sm-side"); if(!el) return;
+    el.innerHTML =
+      `<div class="ss-name">${s.name}</div>
+       <div class="ss-vac"><b>${s.vacancy_pct==null?"—":s.vacancy_pct+"%"}</b> vacancy</div>
+       <div class="ss-keys">
+         <div><span>YTD net absorption</span><b>${_smSF(s.ytd_net_absorption_sf)}</b></div>
+         <div><span>Under construction</span><b>${_smSF(s.under_construction_sf)}</b></div>
+         <div><span>${_smRentLabels.primary}</span><b>${_smRent(s.rent_primary)}</b></div>
+       </div>
+       <button class="ss-deeper" onclick="smDeep()">Dive deeper →</button>`;
+  }
+  function _smRows(s){
+    return [["Inventory", _smSF(s.inventory_sf)], ["Vacant", _smSF(s.vacant_sf)],
+      ["Vacancy rate", s.vacancy_pct==null?"—":s.vacancy_pct+"%"],
+      ["Net absorption (qtr)", _smSF(s.qtr_net_absorption_sf)],
+      ["YTD net absorption", _smSF(s.ytd_net_absorption_sf)],
+      ["YTD leasing", _smSF(s.ytd_leasing_sf)],
+      ["Under construction", _smSF(s.under_construction_sf)],
+      ["YTD completions", _smSF(s.ytd_completions_sf)],
+      [_smRentLabels.primary, _smRent(s.rent_primary)],
+      [_smRentLabels.secondary, _smRent(s.rent_secondary)]];
+  }
+  function smDeep(){
+    const el=document.getElementById("sm-side"), s=_smCur; if(!el||!s) return;
+    el.innerHTML =
+      `<button class="ss-back" onclick="smBack()">← back</button>
+       <div class="ss-name">${s.name}</div>
+       <table class="ss-table">${_smRows(s).map(([k,v])=>`<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`).join("")}</table>`;
+  }
+  function smBack(){ if(_smCur) smSideHover(_smCur); else smSideDefault(); }
+
+  function loadReport(key) {
+    currentKey = key || null;
+    document.querySelectorAll("#sector-tabs .tab")
+      .forEach(t => t.classList.toggle("active", t.dataset.key === key));
+    const url = key ? `/api/report?report=${encodeURIComponent(key)}` : "/api/report";
+    fetch(url).then(r => r.json()).then(d => {
+      if (d && d.error) { showModal(d.error, "Couldn't load report"); return; }
+      populate(d);
+    }).catch(() => showModal(
+      "This report is generating its analysis — the first open can take a few seconds. Please try again in a moment.",
+      "One moment"));
+  }
+
+  function showSection() {}  // single-page report now — no section toggle
+
+  // List the C&W MarketBeat source PDF(s) backing the current metro. A key looks like
+  // "dallas-fort-worth_office_q1-2026"; the combined "_all_" view is backed by both sectors.
+  function renderSourcePdfs(key) {
+    const list = document.getElementById("pdf-list");
+    if (!list) return;
+    const [metro = "dallas-fort-worth", sector = "office", period = "q1-2026"] =
+      String(key || "dallas-fort-worth_office_q1-2026").split("_");
+    const sectors = sector === "all" ? ["office", "industrial"] : [sector];
+    // "dallas-fort-worth" → "Dallas/Fort Worth" (Dallas and Fort Worth are distinct cities)
+    const titleCase = s => s.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    const metroName = metro === "dallas-fort-worth"
+      ? "Dallas/Fort Worth" : titleCase(metro);
+    const periodName = period.toUpperCase().replace("-", " ");
+    list.innerHTML = sectors.map(sec => {
+      const file = `cw-marketbeat-${metro}-${sec}-${period}.pdf`;
+      const secName = sec.charAt(0).toUpperCase() + sec.slice(1);
+      return `<div class="pdf-item">
+        <div class="pdf-ico">PDF</div>
+        <div class="pdf-meta">
+          <div class="pdf-name">${metroName} ${secName} — MarketBeat ${periodName}</div>
+          <div class="pdf-file">data/pdfs/${file}</div>
+        </div></div>`;
+    }).join("");
+  }
+
+  // If opened as a plain file (not via the server), nothing can load — say so loudly.
+  if (location.protocol === "file:") {
+    const b = document.createElement("div");
+    b.textContent = "⚠ Static preview — run ./run.sh and open http://127.0.0.1:5002 for live data (market switching, assistant, decks).";
+    b.style.cssText = "position:fixed;top:0;left:0;right:0;background:#1B1C3A;color:#fff;" +
+      "font:600 13px -apple-system,sans-serif;padding:10px 16px;text-align:center;z-index:999";
+    document.body.appendChild(b);
+  }
+
+  // populate the market switcher, then load the default report
+  // sector tabs (Office / Industrial / Office & Industrial) drive the report switch
+  function sectorLabel(key) {
+    if (/_all_/.test(key)) return "Office & Industrial";
+    if (/_industrial_/.test(key)) return "Industrial";
+    if (/_office_/.test(key)) return "Office";
+    return (key || "").split("_")[1] || key;
+  }
+  function buildSectorTabs(list) {
+    const wrap = document.getElementById("sector-tabs");
+    if (!wrap) return;
+    const rank = k => /_office_/.test(k) ? 0 : /_industrial_/.test(k) ? 1 : /_all_/.test(k) ? 2 : 3;
+    const ordered = [...list].sort((a, b) => rank(a.key) - rank(b.key));
+    wrap.innerHTML = ordered.map(x =>
+      `<button class="tab" role="tab" data-key="${x.key}" onclick="selectReport('${x.key}')">${sectorLabel(x.key)}</button>`
+    ).join("");
+  }
+  function selectReport(key) {
+    showSection("report");   // always land on the live report when switching sector
+    loadReport(key);
+  }
+  fetch("/api/reports").then(r => r.json()).then(list => {
+    list = Array.isArray(list) ? list : [];
+    buildSectorTabs(list);
+    const keys = list.map(x => x.key);
+    const urlKey = new URLSearchParams(location.search).get("report");
+    const def = (urlKey && keys.includes(urlKey) && urlKey) ||
+                keys.find(k => /_office_/.test(k)) || keys[0] || null;
+    if (def) selectReport(def); else loadReport(null);
+  }).catch(() => loadReport(null));
+
+  // Export the current market as a broker deck (PDF or editable PPTX).
+  function downloadDeck(fmt) {
+    window.open(`/deck.${fmt}?report=${encodeURIComponent(currentKey || "")}`, "_blank");
+  }
+  function showExport() { document.getElementById("export-choice").classList.add("show"); }
+  function hideExport() { document.getElementById("export-choice").classList.remove("show"); }
+
+  // Professional in-page modal (replaces native alert popups — fades the page, centers a card).
+  function showModal(text, title) {
+    document.getElementById("modal-title").textContent = title || "MarketBeat Research Assistant";
+    document.getElementById("modal-body").textContent = text || "";
+    document.getElementById("modal").classList.add("show");
+  }
+  function hideModal() { document.getElementById("modal").classList.remove("show"); }
+  function closeWelcome() { document.getElementById("welcome").classList.remove("show"); }
+  function openFeedback() { document.getElementById("feedback-modal").classList.add("show"); document.getElementById("feedback-text").focus(); }
+  function closeFeedback() { document.getElementById("feedback-modal").classList.remove("show"); }
+  // injected from env by the server (kept out of the repo); empty/placeholder when unset
+  const WEB3FORMS_KEY = "__WEB3FORMS_KEY__";
+  function sendFeedback() {
+    const t = document.getElementById("feedback-text").value.trim();
+    if (!t) return;
+    const emailEl = document.getElementById("feedback-email");
+    const email = emailEl ? emailEl.value.trim() : "";
+    document.getElementById("feedback-text").value = "";
+    if (emailEl) emailEl.value = "";
+    closeFeedback();
+    const message = t + "\n\n— Report: " + (currentKey || "—");
+    // server backstop log (+ Resend/SMTP if configured server-side)
+    const serverP = fetch("/feedback", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: t, report: currentKey }) }).then(r => r.json()).catch(() => ({}));
+    // Web3Forms must be submitted from the BROWSER (its free plan blocks server-side calls)
+    const haveKey = WEB3FORMS_KEY && WEB3FORMS_KEY.indexOf("WEB3FORMS") === -1;
+    const w3fP = haveKey
+      ? fetch("https://api.web3forms.com/submit", { method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ access_key: WEB3FORMS_KEY, subject: "Cushman & Wakefield MarketBeat — new feedback",
+            from_name: "Cushman & Wakefield · MarketBeat Intelligence", email: email || undefined, message: message }) })
+          .then(r => r.json()).catch(() => ({}))
+      : Promise.resolve({});
+    Promise.all([serverP, w3fP]).then(([s, w]) => {
+      const emailed = (s && s.emailed) || (w && w.success);
+      showModal(emailed ? "Thanks — your feedback was emailed to Aleks. Much appreciated."
+                        : "Thanks — your feedback was received. Much appreciated.", "Feedback sent");
+    });
+  }
+  // Reveal the feedback button only near the page bottom (so it never covers a graph mid-scroll).
+  function toggleFeedbackBtn() {
+    document.getElementById("feedback-btn").classList.toggle("show",
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60);
+  }
+  window.addEventListener("scroll", toggleFeedbackBtn, { passive: true });
+  window.addEventListener("resize", toggleFeedbackBtn);
+  setTimeout(toggleFeedbackBtn, 300);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { hideModal(); closeWelcome(); closeFeedback(); } });
+  // Welcome note: show ONCE per session — not again on market switches or in-session reloads.
+  const _noWelcome = new URLSearchParams(location.search).has("nowelcome");
+  try {
+    if (!_noWelcome && !sessionStorage.getItem("cw_welcome_seen")) {
+      document.getElementById("welcome").classList.add("show");
+      sessionStorage.setItem("cw_welcome_seen", "1");
+    }
+  } catch (e) { if (!_noWelcome) document.getElementById("welcome").classList.add("show"); }
+
+  // MarketBeat Research Assistant — answers questions and can switch the report for you.
+  async function ask() {
+    const box = document.getElementById("ask"); const q = box.value.trim(); if (!q) return;
+    box.value = "…thinking"; box.disabled = true;
+    try {
+      const r = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: q, report: currentKey }) });
+      const j = await r.json();
+      if (j.switch_to) {
+        const sel = document.getElementById("market-select");
+        if (sel) sel.value = j.switch_to;
+        loadReport(j.switch_to);
+      }
+      if (j.export) showExport();                          // choice pops up immediately
+      else showModal(j.reply || j.error || "No response"); // styled modal, not a native alert
+    } catch (e) { showModal("Assistant offline — start the server with: python server/app.py", "Connection error"); }
+    box.value = ""; box.disabled = false; box.focus();
+  }
+  document.getElementById("ask").addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+
+  // Cycle example prompt ideas in the assistant bar (pauses while you're typing).
+  const PROMPT_IDEAS = [
+    "Ask the MarketBeat Research Assistant…",
+    "“make the bull case for this market”",
+    "“now argue the bear case”",
+    "“how was debt per capita calculated?”",
+    "“compare Dallas/Fort Worth office vs industrial”",
+    "“what’s driving net absorption?”",
+    "“any recent deals in this market?”",
+    "“show Dallas/Fort Worth industrial”",
+    "“export this as a PowerPoint”",
+  ];
+  (function () {
+    const el = document.getElementById("ask");
+    if (!el) return;
+    let i = 0;
+    setInterval(() => {
+      if (el.value || document.activeElement === el) return;  // don't interrupt the user
+      i = (i + 1) % PROMPT_IDEAS.length;
+      el.classList.add("fading");
+      setTimeout(() => { el.placeholder = PROMPT_IDEAS[i]; el.classList.remove("fading"); }, 220);
+    }, 3500);
+  })();
+</script>
+</body>
+</html>

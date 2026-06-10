@@ -1,0 +1,26 @@
+# Render Blueprint. In Render: New → Blueprint → connect this repo and it creates the
+# service below. Secrets (sync: false) are entered in the Render dashboard, never in the
+# repo. Health check hits /api/health. The site is open (no password gate).
+services:
+  - type: web
+    name: cushman-marketbeat-intelligence
+    runtime: docker
+    plan: starter            # ~$7/mo, always on. "free" works too but sleeps when idle.
+    healthCheckPath: /api/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false           # paste in the Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: OPENAI_VERIFY_MODEL
+        value: gpt-4.1
+      - key: WEB3FORMS_KEY
+        sync: false           # feedback → email. Get a free key at web3forms.com (just
+                              # enter your email, no account). See DEPLOY.md for Resend/SMTP alts.
+      - key: NEWSAPI_KEY
+        sync: false           # DFW CRE news aggregator. The shipped dfw_news.json is a
+                              # snapshot; set this if you later add a cron to refresh it.
