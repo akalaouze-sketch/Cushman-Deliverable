@@ -301,7 +301,54 @@ def _shield_mask(out_arr):
                       .filter(ImageFilter.MaxFilter(17))) > 127   # dilate back + margin
 
 
-def _relabel(out_arr, lab, fl, seeds, names, W, H):
+def _sign_mask(out_arr, base):
+    """Mask of EVERY highway sign — interstate/US shields (35E, 635, 75, ...) and the tollway pills
+    (SRT/DNT/PGBT/CTP) — so each can be composited back PRISTINE and COMPLETE on top of the shading,
+    never partially covered. A sign is a compact, solid, white-bodied graphic with a dark route number;
+    that dark number splits the white body, so _shield_mask's erode-then-blob pass fragments a shield and
+    misses it. Here we instead CLOSE the white (dilate→erode) to bridge the number gap so each sign is one
+    solid blob, keep the compact sign-sized blobs that contain a dark glyph (rejecting elongated roads and
+    wide submarket labels), and return each sign's FULL graphic (white body + dark number/border) taken
+    from the ORIGINAL map so the paste is pristine."""
+    arr = out_arr.clip(0, 255).astype(np.uint8)
+    lum = arr.mean(axis=2)
+    rr, bb = arr[..., 0].astype(int), arr[..., 2].astype(int)
+    white = (lum > 188) & (np.abs(bb - rr) < 34)
+    closed = np.asarray(Image.fromarray((white * 255).astype(np.uint8))
+                        .filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(9))) > 127
+    H, W = closed.shape
+    baselum = base.mean(axis=2)
+    mask = np.zeros((H, W), bool)
+    seen = np.zeros((H, W), bool)
+    for y0, x0 in zip(*np.where(closed)):
+        if seen[y0, x0]:
+            continue
+        comp, dq = [], deque([(y0, x0)])
+        seen[y0, x0] = True
+        minx = maxx = x0
+        miny = maxy = y0
+        while dq:
+            y, x = dq.popleft()
+            comp.append((y, x))
+            minx, maxx = min(minx, x), max(maxx, x)
+            miny, maxy = min(miny, y), max(maxy, y)
+            for ny, nx in ((y+1, x), (y-1, x), (y, x+1), (y, x-1)):
+                if 0 <= ny < H and 0 <= nx < W and closed[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    dq.append((ny, nx))
+        w, h = maxx - minx + 1, maxy - miny + 1
+        fill = len(comp) / (w * h)
+        asp = max(w, h) / max(1, min(w, h))
+        sub = baselum[miny:maxy+1, minx:maxx+1]
+        darkfrac = float((sub < 125).mean())   # a sign carries a dark route number; a road blank does not
+        if 16 <= w <= 80 and 16 <= h <= 72 and asp < 2.4 and fill > 0.55 and 0.02 < darkfrac < 0.5:
+            # the sign's whole graphic inside its box: white body + dark number/border (skip mid-tone landuse)
+            mask[miny:maxy+1, minx:maxx+1] |= (sub > 185) | (sub < 125)
+    return np.asarray(Image.fromarray((mask * 255).astype(np.uint8))
+                      .filter(ImageFilter.MaxFilter(3))) > 127   # cover anti-aliased edges
+
+
+def _relabel(out_arr, base, lab, fl, seeds, names, W, H):
     """The baked-in JPEG labels go blurry once we recolor the regions underneath them.
     So erase each original label and re-draw the name SHARPLY with a clean white outline.
 
@@ -316,8 +363,9 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
         if m.any():
             rc[i] = out_arr[m].mean(axis=0)
 
-    # Never erase a compact highway-sign pill (SRT / DNT / PGBT / interstate shields).
-    shield = _shield_mask(out_arr)
+    # Every highway sign (interstate/US shields + tollway pills) — protected from the label erase
+    # and composited back pristine on top at the end, so a sign is never partially or fully covered.
+    shield = _sign_mask(out_arr, base)
 
     BW, BH = 196, 122        # search window around each label centre
     centers = {}             # corrected label centre (dark-text centroid) for the redraw
@@ -363,11 +411,11 @@ def _relabel(out_arr, lab, fl, seeds, names, W, H):
                    stroke_width=4, stroke_fill=(255, 255, 255))
             ty += lh
 
-    # Put the highway signs back on TOP of everything — a redrawn label must never cover an
-    # interstate shield. out_arr still holds the pristine, un-tinted signs, so paste them over
-    # the finished canvas (labels included).
+    # Put the highway signs back on TOP of everything — the shading, the outlines and the redrawn
+    # labels. Paste from the ORIGINAL map so each sign is its full pristine graphic, never a version
+    # the fill has tinted at the edges.
     cv = np.asarray(canvas).copy()
-    cv[shield] = out_arr[shield].clip(0, 255).astype(np.uint8)
+    cv[shield] = base[shield].clip(0, 255).astype(np.uint8)
     return Image.fromarray(cv)
 
 
@@ -459,7 +507,7 @@ def build(sector: str) -> None:
     #     and re-DRAW it sharply at the same spot with a clean white outline. The erase is
     #     clipped to each label's own region (fl) so it never bleeds into a neighbour. ---
     fl = _fill_regions(lab)
-    img = _relabel(out_arr, lab, fl, seeds, names, W, H)
+    img = _relabel(out_arr, base, lab, fl, seeds, names, W, H)
     idmap = lab
 
     # Crop to the coloured metro so there's no wasted grey basemap around it — the map fills
