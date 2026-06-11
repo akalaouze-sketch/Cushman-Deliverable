@@ -187,6 +187,81 @@ def _fill_regions(lab, iters=46):
     return fl
 
 
+def _fill_enclosed_holes(lab, base, shield):
+    """Fill non-teal patches that sit FULLY INSIDE a single region — building/lake/parking
+    blanks and isolated specks the teal-only geodesic flood skipped, which otherwise read as
+    grey holes in an otherwise solid submarket. So each region paints as one clean shade.
+
+    What is deliberately NOT filled, so the map stays honest:
+      - ROADS / region seams: the white roads connect to the map border, so the border flood
+        reaches them — they're 'outside', never enclosed, never filled (no bleed across roads
+        into a neighbour, the bug an earlier 'grow to outline' pass caused).
+      - HIGHWAY SIGNS: the shield pills are masked out and left untouched.
+      - DARK LABEL TEXT: only LIGHT blanks are filled, so the baked-in dark label strokes
+        survive for _relabel to find, erase and redraw crisply.
+    Mutates and returns lab."""
+    gap = lab < 0
+    H, W = gap.shape
+    lum = base.mean(axis=2)
+    # 'outside' = gap pixels reachable from the image border (background + the white road
+    # network, which runs off every edge). 4-connected BFS seeded from every border gap pixel.
+    # So roads/region seams are NEVER "enclosed" and never filled — no bleed across a road
+    # into a neighbour. (PIL's floodfill is unreliable here, so flood it ourselves.)
+    outside = np.zeros((H, W), bool)
+    dq = deque()
+    for x in range(W):
+        for y in (0, H - 1):
+            if gap[y, x] and not outside[y, x]:
+                outside[y, x] = True; dq.append((y, x))
+    for y in range(H):
+        for x in (0, W - 1):
+            if gap[y, x] and not outside[y, x]:
+                outside[y, x] = True; dq.append((y, x))
+    while dq:
+        y, x = dq.popleft()
+        for ny, nx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+            if 0 <= ny < H and 0 <= nx < W and gap[ny, nx] and not outside[ny, nx]:
+                outside[ny, nx] = True; dq.append((ny, nx))
+    enc = gap & ~outside                       # non-teal patches fully inside the metro
+    # Protect anything that hugs a dense DARK glyph: the highway signs (SRT/DNT/PGBT/interstate
+    # shields) and the baked-in submarket labels both wrap dark text, so a tight dilation of the
+    # dark pixels covers their white bodies/halos and keeps them out of the fill. Building and
+    # parking blanks are light with only thin sparse outlines, so the bulk of them stays fillable.
+    darktext = enc & (lum < 120)
+    protect = np.asarray(Image.fromarray((darktext * 255).astype(np.uint8))
+                         .filter(ImageFilter.MaxFilter(13))) > 127
+    holes = enc & (lum > 135) & ~shield & ~protect
+    if not holes.any():
+        return lab
+    # circuit breaker: real interior holes are a small slice of all gap (background + roads
+    # dominate). If 'holes' is implausibly large the outside-flood failed — abort rather than
+    # bleed region colour across the whole map.
+    if holes.sum() > 0.45 * gap.sum():
+        print(f"  ! hole-fill aborted: holes={int(holes.sum())} of gap={int(gap.sum())} "
+              f"(>45%) — leaving fills as-is")
+        return lab
+    # grow region ids strictly WITHIN the holes (never into roads/outside), so each enclosed
+    # blank takes the colour of the region wrapping it.
+    fillmap = lab.copy()
+    for _ in range(160):
+        changed = False
+        for ax, sh in ((0, 1), (0, -1), (1, 1), (1, -1)):
+            nb = np.roll(fillmap, sh, axis=ax)
+            if ax == 0:
+                (nb[-1] if sh == 1 else nb[0]).fill(-1)
+            else:
+                (nb[:, -1] if sh == 1 else nb[:, 0]).fill(-1)
+            m = holes & (fillmap < 0) & (nb >= 0)
+            if m.any():
+                fillmap[m] = nb[m]
+                changed = True
+        if not changed:
+            break
+    fill = holes & (fillmap >= 0)
+    lab[fill] = fillmap[fill]
+    return lab
+
+
 def _shield_mask(out_arr):
     """Mask of the little highway SIGNS (SRT / DNT / PGBT / interstate shields) so the label
     erase never touches them. A sign is a SMALL, COMPACT, SOLID white pill; a submarket
@@ -357,6 +432,16 @@ def build(sector: str) -> None:
     out_arr = base.copy()
     lg = light_grey[ys, xs][:, None]
     out_arr[ys, xs] = lg * (1 - BLEND) + cols[lab[ys, xs]] * BLEND   # tint each pixel by its region
+
+    # Fill interior holes (grey blanks fully inside one region) so each submarket reads solid.
+    # Detect shields on the PAINTED map (only the sign pills stay white once regions are tinted)
+    # so the fill never covers them, then repaint over the now-larger regions.
+    shield = _shield_mask(out_arr.clip(0, 255).astype(np.uint8))
+    lab = _fill_enclosed_holes(lab, base, shield)
+    ys, xs = np.where(lab >= 0)
+    out_arr = base.copy()
+    lg = light_grey[ys, xs][:, None]
+    out_arr[ys, xs] = lg * (1 - BLEND) + cols[lab[ys, xs]] * BLEND
 
     # Soft area outlines: a subtle line wherever the submarket id changes, so each area is
     # delineated without being harsh. (The baked-in labels keep their original dark-text +
