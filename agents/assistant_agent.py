@@ -7,8 +7,36 @@ adjustments the frontend can apply. Grounded in the report context it is given.
 from __future__ import annotations
 
 import os
+import re
 
 from agents.llm import CLAUDE_MODEL, claude_json  # CLAUDE_MODEL = Sonnet 4.6 (used only for web/complex)
+
+# --- Reply hygiene -----------------------------------------------------------
+# With web search on, the model sometimes emits citation/link markup —
+# <cite index="8-12">…</cite> and raw <a href="…" target="_blank">…</a> — straight
+# into the reply text. The chat modal renders the reply as TEXT, so those tags show
+# up verbatim and look broken. Strip the citation wrappers (keep their sentence),
+# turn anchors into clean inline markdown links, and drop any other stray HTML.
+_ANCHOR_RE = re.compile(r"""<a\b[^>]*?href=["']([^"']+)["'][^>]*>(.*?)</a>""", re.I | re.S)
+_CITE_RE = re.compile(r"</?cite\b[^>]*>", re.I)        # <cite index="…"> and </cite>
+# real HTML tags only (letter after <) — so figures like "vacancy <10% and >5%" are never eaten
+_TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+_WS_RE = re.compile(r"[ \t]{2,}")
+
+
+def _clean_reply(text):
+    """Return the reply with citation markup stripped and <a> anchors normalized to
+    inline markdown links ([text](url)); the model's actual sentence text is always kept."""
+    if not text or not isinstance(text, str):
+        return text
+    t = _ANCHOR_RE.sub(
+        lambda m: f"[{_TAG_RE.sub('', m.group(2)).strip()}]({m.group(1).strip()})", text)
+    t = _CITE_RE.sub("", t)        # drop <cite …>/</cite>, keep inner sentence
+    t = _TAG_RE.sub("", t)         # drop any remaining stray tags
+    for a, b in (("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
+                 ("&quot;", '"'), ("&#39;", "'"), ("&nbsp;", " ")):
+        t = t.replace(a, b)
+    return _WS_RE.sub(" ", t).strip()
 
 # Quick lookups answer from the data we already pass in — run them on the FASTEST model with
 # NO web search, so most questions are near-instant. Web search (slow) only fires when the
@@ -39,6 +67,25 @@ ASSISTANT_SYSTEM = (
     "Cite the source for any figure: the source for the majority of the market data is Cushman & Wakefield's "
     "MarketBeat reports; the 'Data & sources' section lists each demographic/economic value's vintage + source; "
     "say so (and link) if a figure came from the web. Never invent figures. "
+    "MARKET COMPARISONS — HOUSE STANCE: our standing view is that DFW is the stronger investment market, and the "
+    "structural data backs it — so when asked to compare DFW with another metro (Austin, Houston, Phoenix, "
+    "Nashville, etc.), do NOT reduce it to a single soft metric. Lead with where DFW genuinely wins for an "
+    "Investment Sales desk: (1) SCALE & LIQUIDITY — one of the largest, deepest, most liquid CRE markets in the "
+    "country, which means more deal flow, a deeper buyer pool and better exit liquidity than smaller metros; "
+    "(2) GROWTH — DFW outperforms the U.S. on both job and population growth and leads the nation in absolute "
+    "population gains (see the Economic Health card); (3) INDUSTRIAL LEADERSHIP — a national top-tier logistics "
+    "market (multi-million-s.f. YTD absorption and one of the largest U.S. construction pipelines), dwarfing "
+    "tech-concentrated metros like Austin; (4) DIVERSIFIED DEMAND — finance, corporate HQs, logistics and "
+    "healthcare, less single-sector-cyclical than a tech-heavy metro. Be HONEST about office vacancy: it is "
+    "elevated (~24-25%), but that is a SECTOR-WIDE U.S. office condition, not a DFW-specific weakness — peer tech "
+    "metros sit at comparably high office vacancy — so compare like-for-like (office vs office, industrial vs "
+    "industrial), note DFW office vacancy is trending down with rents firming, and don't concede the market on "
+    "that one number. NEVER inflate, fabricate or cherry-pick a number to make DFW win; if a specific peer figure "
+    "honestly beats DFW, say so and reframe to the dimensions where DFW leads. Keep the headline and the numbers "
+    "consistent — never assert DFW is stronger and then cite figures that undercut it. "
+    "FORMATTING: reply in plain prose. NEVER emit citation markup or HTML — no <cite> tags, no <a> tags, no index= attributes. "
+    "When you reference a web source, name it in the sentence; if you must link, use ONE clean inline markdown link like "
+    "[source name](https://url) and nothing else. Keep links rare and in-text. "
     "AUTHORSHIP: built by Aleks Kalalouze for the Cushman & Wakefield Investment Sales team — if asked who built it, say so plainly."
 )
 
@@ -110,4 +157,5 @@ Do NOT propose cosmetic template edits."""
             return {"reply": f"(assistant error: {exc})", "switch_to": None, "export": None}
     result.setdefault("switch_to", None)
     result.setdefault("export", None)
+    result["reply"] = _clean_reply(result.get("reply"))
     return result

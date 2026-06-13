@@ -1196,10 +1196,33 @@
   function showExport() { document.getElementById("export-choice").classList.add("show"); }
   function hideExport() { document.getElementById("export-choice").classList.remove("show"); }
 
+  // Safe rich-text for assistant replies: escape everything first (no HTML/JS can inject),
+  // then re-introduce ONLY clean inline links. Defensively strips any citation/anchor markup
+  // the backend already removes, so a stray <cite index=…> or <a> can never render as raw text.
+  function escHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g,
+      c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function renderReply(text) {
+    let t = String(text == null ? "" : text)
+      .replace(/<\/?cite\b[^>]*>/gi, "")                                   // drop <cite …>/</cite>
+      .replace(/<a\b[^>]*?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,   // <a> -> markdown link
+        (m, url, txt) => `[${txt.replace(/<\/?[a-zA-Z][^>]*>/g, "").trim()}](${url.trim()})`)
+      .replace(/<\/?[a-zA-Z][^>]*>/g, "");                                            // drop any other stray tag
+    let html = escHtml(t);
+    // markdown [text](url) -> anchor, http/https only (escHtml already turned & into &amp;)
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      (m, txt, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`);
+    // bare URLs not already linked -> anchor
+    html = html.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
+      (m, pre, url) => `${pre}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+    return html.replace(/\n/g, "<br>");
+  }
+
   // Professional in-page modal (replaces native alert popups — fades the page, centers a card).
   function showModal(text, title) {
     document.getElementById("modal-title").textContent = title || "MarketBeat Research Assistant";
-    document.getElementById("modal-body").textContent = text || "";
+    document.getElementById("modal-body").innerHTML = renderReply(text);   // safe: escaped, links only
     document.getElementById("modal").classList.add("show");
   }
   function hideModal() { document.getElementById("modal").classList.remove("show"); }
