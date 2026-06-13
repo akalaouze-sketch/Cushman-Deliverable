@@ -862,14 +862,14 @@
       const c = EVENT_COLORS[(e.type || "").toLowerCase()] || "#5d6b73";
       const label = period || "";   // show the quarter, not a calendar date
       const dateHtml = e.source_url
-        ? `<a class="eb-date" href="${e.source_url}" target="_blank" rel="noopener">${label} ↗</a>`
+        ? `<a class="eb-date" href="${escHtml(e.source_url)}" target="_blank" rel="noopener">${label} ↗</a>`
         : `<div class="eb-date">${label}</div>`;
       return `<div class="eb-item" style="--c:${c}">
         <div class="eb-card">
-          <div class="eb-tag">${e.type || "deal"}${e.sector ? " · " + e.sector : ""}</div>
-          <div class="eb-name">${e.title || ""}</div>
-          <div class="eb-detail">${e.detail || ""}</div>
-          ${e.submarket ? `<div class="eb-msub">${e.submarket}</div>` : ""}
+          <div class="eb-tag">${escHtml(e.type || "deal")}${e.sector ? " · " + escHtml(e.sector) : ""}</div>
+          <div class="eb-name">${escHtml(e.title || "")}</div>
+          <div class="eb-detail">${escHtml(e.detail || "")}</div>
+          ${e.submarket ? `<div class="eb-msub">${escHtml(e.submarket)}</div>` : ""}
           ${dateHtml}
         </div>
         <div class="eb-dot"></div></div>`;
@@ -895,13 +895,13 @@
       const c = ANNOUNCE_COLORS[(a.type || "").toLowerCase()] || "#5d6b73";
       const label = "";   // calendar date hidden
       const dateHtml = a.source_url
-        ? `<a class="eb-date" href="${a.source_url}" target="_blank" rel="noopener">${label || "source"} ↗</a>`
+        ? `<a class="eb-date" href="${escHtml(a.source_url)}" target="_blank" rel="noopener">${label || "source"} ↗</a>`
         : (label ? `<div class="eb-date">${label}</div>` : "");
       return `<div class="eb-item" style="--c:${c}">
         <div class="eb-card">
-          <div class="eb-tag">${a.type || "announcement"}${a.sector ? " · " + a.sector : ""}</div>
-          <div class="eb-name">${a.title || ""}</div>
-          <div class="eb-detail">${a.detail || ""}</div>
+          <div class="eb-tag">${escHtml(a.type || "announcement")}${a.sector ? " · " + escHtml(a.sector) : ""}</div>
+          <div class="eb-name">${escHtml(a.title || "")}</div>
+          <div class="eb-detail">${escHtml(a.detail || "")}</div>
           ${dateHtml}
         </div>
         <div class="eb-dot"></div></div>`;
@@ -1210,12 +1210,16 @@
         (m, url, txt) => `[${txt.replace(/<\/?[a-zA-Z][^>]*>/g, "").trim()}](${url.trim()})`)
       .replace(/<\/?[a-zA-Z][^>]*>/g, "");                                            // drop any other stray tag
     let html = escHtml(t);
-    // markdown [text](url) -> anchor, http/https only (escHtml already turned & into &amp;)
-    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    // markdown [text](url) -> anchor, http/https only (escHtml already turned & into &amp;).
+    // URL part allows one level of balanced parens so Wikipedia-style links aren't truncated.
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^\s()]|\([^\s()]*\))+)\)/g,
       (m, txt, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`);
-    // bare URLs not already linked -> anchor
-    html = html.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
-      (m, pre, url) => `${pre}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+    // bare URLs not already linked -> anchor; keep trailing sentence punctuation OUT of the href
+    html = html.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (m, pre, url) => {
+      const trail = (url.match(/[.,;:!?)]+$/) || [""])[0];
+      const clean = url.slice(0, url.length - trail.length);
+      return `${pre}<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>${trail}`;
+    });
     return html.replace(/\n/g, "<br>");
   }
 

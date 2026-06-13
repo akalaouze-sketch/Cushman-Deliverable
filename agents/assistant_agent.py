@@ -6,6 +6,7 @@ adjustments the frontend can apply. Grounded in the report context it is given.
 """
 from __future__ import annotations
 
+import html
 import os
 import re
 
@@ -17,25 +18,37 @@ from agents.llm import CLAUDE_MODEL, claude_json  # CLAUDE_MODEL = Sonnet 4.6 (u
 # into the reply text. The chat modal renders the reply as TEXT, so those tags show
 # up verbatim and look broken. Strip the citation wrappers (keep their sentence),
 # turn anchors into clean inline markdown links, and drop any other stray HTML.
-_ANCHOR_RE = re.compile(r"""<a\b[^>]*?href=["']([^"']+)["'][^>]*>(.*?)</a>""", re.I | re.S)
-_CITE_RE = re.compile(r"</?cite\b[^>]*>", re.I)        # <cite index="…"> and </cite>
-# real HTML tags only (letter after <) — so figures like "vacancy <10% and >5%" are never eaten
-_TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+# Attribute body that swallows quoted strings atomically, so a '>' inside an attribute value
+# can't split a tag. Tag matchers require a letter right after '<', so figures like
+# "vacancy <10% and >5%" are never mistaken for markup.
+_ATTRS = r"""(?:[^>"']|"[^"]*"|'[^']*')*"""
+_ANCHOR_RE = re.compile(r'<a\b' + _ATTRS + r'href=["\']([^"\']+)["\']' + _ATTRS + r'>(.*?)</a>', re.I | re.S)
+_CITE_RE = re.compile(r'</?cite\b' + _ATTRS + r'>', re.I)        # <cite index="…"> and </cite>
+_TAG_RE = re.compile(r'</?[a-zA-Z]' + _ATTRS + r'>')             # any other real HTML tag
 _WS_RE = re.compile(r"[ \t]{2,}")
 
 
+def _anchor_to_md(m):
+    """<a href=URL>TEXT</a> → [TEXT](URL); a label-less anchor → the bare URL."""
+    url, label = m.group(1).strip(), _TAG_RE.sub("", m.group(2)).strip()
+    return f"[{label}]({url})" if label else url
+
+
 def _clean_reply(text):
-    """Return the reply with citation markup stripped and <a> anchors normalized to
-    inline markdown links ([text](url)); the model's actual sentence text is always kept."""
-    if not text or not isinstance(text, str):
+    """Return the reply with citation markup stripped and <a> anchors normalized to inline
+    markdown links ([text](url)); the model's actual sentence text is always kept. Entities are
+    decoded FIRST (single pass) so an entity-encoded <cite>/<a>/tag is cleaned, not revived."""
+    if not text:
         return text
-    t = _ANCHOR_RE.sub(
-        lambda m: f"[{_TAG_RE.sub('', m.group(2)).strip()}]({m.group(1).strip()})", text)
-    t = _CITE_RE.sub("", t)        # drop <cite …>/</cite>, keep inner sentence
-    t = _TAG_RE.sub("", t)         # drop any remaining stray tags
-    for a, b in (("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
-                 ("&quot;", '"'), ("&#39;", "'"), ("&nbsp;", " ")):
-        t = t.replace(a, b)
+    if not isinstance(text, str):
+        if isinstance(text, list):                      # model occasionally splits a reply into parts
+            text = " ".join(str(x) for x in text)
+        else:
+            return text
+    t = html.unescape(text).replace("\u00a0", " ")    # &lt;cite&gt; -> <cite>; &amp;lt; stays &lt;
+    t = _ANCHOR_RE.sub(_anchor_to_md, t)
+    t = _CITE_RE.sub("", t)                             # drop <cite …>/</cite>, keep inner sentence
+    t = _TAG_RE.sub("", t)                              # drop any remaining stray tags
     return _WS_RE.sub(" ", t).strip()
 
 # Quick lookups answer from the data we already pass in — run them on the FASTEST model with
